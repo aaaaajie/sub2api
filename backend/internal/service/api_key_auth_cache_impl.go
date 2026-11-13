@@ -14,7 +14,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 27 // v27: group require_privacy_set (OpenAI scheduling reads it from ctx)
+const apiKeyAuthSnapshotVersion = 28 // v28: group system prompt
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -382,6 +382,7 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 		snapshot.Group = &APIKeyAuthGroupSnapshot{
 			ID:                              apiKey.Group.ID,
 			Name:                            apiKey.Group.Name,
+			SystemPrompt:                    apiKey.Group.SystemPrompt,
 			Platform:                        apiKey.Group.Platform,
 			IsExclusive:                     apiKey.Group.IsExclusive,
 			Status:                          apiKey.Group.Status,
@@ -486,6 +487,7 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 		apiKey.Group = &Group{
 			ID:                              snapshot.Group.ID,
 			Name:                            snapshot.Group.Name,
+			SystemPrompt:                    snapshot.Group.SystemPrompt,
 			Platform:                        snapshot.Group.Platform,
 			IsExclusive:                     snapshot.Group.IsExclusive,
 			Status:                          snapshot.Group.Status,
