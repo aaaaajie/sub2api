@@ -642,6 +642,8 @@ export interface Group {
 export interface AdminGroup extends Group {
   // 管理端的 name / description 始终是原字段，各语言译文另放在 i18n 里
   i18n?: GroupI18n
+	// Only administrators receive this per-group gateway instruction.
+	system_prompt?: string
   force_openai_fast: boolean
   free_openai_fast: boolean
   model_pricing: import('@/api/admin/channels').ChannelModelPricing[]
@@ -809,6 +811,7 @@ export interface CreateGroupRequest {
   name: string
   description?: string | null
   i18n?: GroupI18n
+  system_prompt?: string
   platform?: GroupPlatform
   rate_multiplier?: number
   is_exclusive?: boolean
@@ -876,6 +879,7 @@ export interface UpdateGroupRequest {
   name?: string
   description?: string | null
   i18n?: GroupI18n
+  system_prompt?: string
   platform?: GroupPlatform
   rate_multiplier?: number
   is_exclusive?: boolean

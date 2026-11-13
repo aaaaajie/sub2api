@@ -98,6 +98,20 @@ func (_c *GroupCreate) SetI18n(v domain.GroupI18n) *GroupCreate {
 	return _c
 }
 
+// SetSystemPrompt sets the "system_prompt" field.
+func (_c *GroupCreate) SetSystemPrompt(v string) *GroupCreate {
+	_c.mutation.SetSystemPrompt(v)
+	return _c
+}
+
+// SetNillableSystemPrompt sets the "system_prompt" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSystemPrompt(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetSystemPrompt(*v)
+	}
+	return _c
+}
+
 // SetRateMultiplier sets the "rate_multiplier" field.
 func (_c *GroupCreate) SetRateMultiplier(v float64) *GroupCreate {
 	_c.mutation.SetRateMultiplier(v)
@@ -1071,6 +1085,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultI18n
 		_c.mutation.SetI18n(v)
 	}
+	if _, ok := _c.mutation.SystemPrompt(); !ok {
+		v := group.DefaultSystemPrompt
+		_c.mutation.SetSystemPrompt(v)
+	}
 	if _, ok := _c.mutation.RateMultiplier(); !ok {
 		v := group.DefaultRateMultiplier
 		_c.mutation.SetRateMultiplier(v)
@@ -1260,6 +1278,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.I18n(); !ok {
 		return &ValidationError{Name: "i18n", err: errors.New(`ent: missing required field "Group.i18n"`)}
+	}
+	if _, ok := _c.mutation.SystemPrompt(); !ok {
+		return &ValidationError{Name: "system_prompt", err: errors.New(`ent: missing required field "Group.system_prompt"`)}
 	}
 	if _, ok := _c.mutation.RateMultiplier(); !ok {
 		return &ValidationError{Name: "rate_multiplier", err: errors.New(`ent: missing required field "Group.rate_multiplier"`)}
@@ -1502,6 +1523,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.I18n(); ok {
 		_spec.SetField(group.FieldI18n, field.TypeJSON, value)
 		_node.I18n = value
+	}
+	if value, ok := _c.mutation.SystemPrompt(); ok {
+		_spec.SetField(group.FieldSystemPrompt, field.TypeString, value)
+		_node.SystemPrompt = value
 	}
 	if value, ok := _c.mutation.RateMultiplier(); ok {
 		_spec.SetField(group.FieldRateMultiplier, field.TypeFloat64, value)
@@ -1976,6 +2001,18 @@ func (u *GroupUpsert) SetI18n(v domain.GroupI18n) *GroupUpsert {
 // UpdateI18n sets the "i18n" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateI18n() *GroupUpsert {
 	u.SetExcluded(group.FieldI18n)
+	return u
+}
+
+// SetSystemPrompt sets the "system_prompt" field.
+func (u *GroupUpsert) SetSystemPrompt(v string) *GroupUpsert {
+	u.Set(group.FieldSystemPrompt, v)
+	return u
+}
+
+// UpdateSystemPrompt sets the "system_prompt" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateSystemPrompt() *GroupUpsert {
+	u.SetExcluded(group.FieldSystemPrompt)
 	return u
 }
 
@@ -3116,6 +3153,20 @@ func (u *GroupUpsertOne) SetI18n(v domain.GroupI18n) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateI18n() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateI18n()
+	})
+}
+
+// SetSystemPrompt sets the "system_prompt" field.
+func (u *GroupUpsertOne) SetSystemPrompt(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSystemPrompt(v)
+	})
+}
+
+// UpdateSystemPrompt sets the "system_prompt" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateSystemPrompt() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSystemPrompt()
 	})
 }
 
@@ -4590,6 +4641,20 @@ func (u *GroupUpsertBulk) SetI18n(v domain.GroupI18n) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateI18n() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateI18n()
+	})
+}
+
+// SetSystemPrompt sets the "system_prompt" field.
+func (u *GroupUpsertBulk) SetSystemPrompt(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSystemPrompt(v)
+	})
+}
+
+// UpdateSystemPrompt sets the "system_prompt" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateSystemPrompt() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSystemPrompt()
 	})
 }
 

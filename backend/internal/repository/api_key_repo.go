@@ -173,6 +173,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 			q.Select(
 				group.FieldID,
 				group.FieldName,
+				group.FieldSystemPrompt,
 				group.FieldPlatform,
 				group.FieldIsExclusive,
 				group.FieldStatus,
@@ -981,6 +982,7 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 	return &service.Group{
 		ID:                              g.ID,
 		Name:                            g.Name,
+		SystemPrompt:                    g.SystemPrompt,
 		Description:                     derefString(g.Description),
 		I18n:                            g.I18n,
 		Platform:                        g.Platform,

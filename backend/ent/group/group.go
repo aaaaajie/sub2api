@@ -28,6 +28,8 @@ const (
 	FieldDescription = "description"
 	// FieldI18n holds the string denoting the i18n field in the database.
 	FieldI18n = "i18n"
+	// FieldSystemPrompt holds the string denoting the system_prompt field in the database.
+	FieldSystemPrompt = "system_prompt"
 	// FieldRateMultiplier holds the string denoting the rate_multiplier field in the database.
 	FieldRateMultiplier = "rate_multiplier"
 	// FieldPeakRateEnabled holds the string denoting the peak_rate_enabled field in the database.
@@ -233,6 +235,7 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldI18n,
+	FieldSystemPrompt,
 	FieldRateMultiplier,
 	FieldPeakRateEnabled,
 	FieldPeakStart,
@@ -334,6 +337,8 @@ var (
 	NameValidator func(string) error
 	// DefaultI18n holds the default value on creation for the "i18n" field.
 	DefaultI18n domain.GroupI18n
+	// DefaultSystemPrompt holds the default value on creation for the "system_prompt" field.
+	DefaultSystemPrompt string
 	// DefaultRateMultiplier holds the default value on creation for the "rate_multiplier" field.
 	DefaultRateMultiplier float64
 	// DefaultPeakRateEnabled holds the default value on creation for the "peak_rate_enabled" field.
@@ -477,6 +482,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByDescription orders the results by the description field.
 func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
+// BySystemPrompt orders the results by the system_prompt field.
+func BySystemPrompt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSystemPrompt, opts...).ToFunc()
 }
 
 // ByRateMultiplier orders the results by the rate_multiplier field.
