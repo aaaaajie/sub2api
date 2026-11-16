@@ -3,6 +3,23 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Restrained cool monochrome palette for the light theme. */
+    --color-primary-50: 248 249 250;
+    --color-primary-100: 239 242 244;
+    --color-primary-200: 222 227 231;
+    --color-primary-300: 198 207 214;
+    --color-primary-400: 160 172 182;
+    --color-primary-500: 112 126 138;
+    --color-primary-600: 82 96 108;
+    --color-primary-700: 61 73 84;
+    --color-primary-800: 43 53 62;
+    --color-primary-900: 27 35 42;
+    --color-primary-950: 13 18 23;
+    --color-grid: 110 121 132;
+    --color-code-link: 82 96 108;
+  }
+
   * {
     @apply border-gray-200 dark:border-dark-700;
   }
@@ -13,12 +30,31 @@
   }
 
   .dark {
+    /* Near-black surfaces and soft steel-gray details for the dark theme. */
+    --color-primary-50: 246 248 249;
+    --color-primary-100: 230 234 237;
+    --color-primary-200: 207 215 220;
+    --color-primary-300: 180 190 198;
+    --color-primary-400: 146 158 168;
+    --color-primary-500: 99 112 123;
+    --color-primary-600: 79 91 101;
+    --color-primary-700: 61 72 81;
+    --color-primary-800: 45 54 62;
+    --color-primary-900: 30 37 43;
+    --color-primary-950: 16 21 26;
+    --color-grid: 230 234 237;
+    --color-code-link: 146 158 168;
     color-scheme: dark;
   }
 
   body {
     @apply bg-gray-50 text-gray-900 dark:bg-dark-950 dark:text-gray-100;
     @apply min-h-screen;
+    background-color: #f5f6fb;
+  }
+
+  .dark body {
+    background-color: #090a0c;
   }
 
   /* 自定义滚动条 - 仅针对 Firefox，避免 Chrome 取消 webkit 的全局定制 */
@@ -60,6 +96,18 @@
     @apply bg-gray-400 dark:bg-dark-500;
   }
 
+  /* Keep the viewport width stable across pages and dialog scroll locking.
+     Only hide the document scrollbar; nested scroll areas retain their controls. */
+  html {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
   /* 选中文本样式 */
   ::selection {
     @apply bg-primary-500/20 text-primary-900 dark:text-primary-100;
@@ -80,10 +128,9 @@
   }
 
   .btn-primary {
-    @apply bg-gradient-to-r from-primary-500 to-primary-600;
-    @apply text-white shadow-md shadow-primary-500/25;
-    @apply hover:from-primary-600 hover:to-primary-700 hover:shadow-lg hover:shadow-primary-500/30;
-    @apply dark:shadow-primary-500/20;
+    @apply bg-gray-900 text-white shadow-sm;
+    @apply hover:bg-gray-800;
+    @apply dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white;
   }
 
   .btn-secondary {
@@ -181,6 +228,12 @@
   .dark .input[type='month'],
   .dark .input[type='week'] {
     color-scheme: dark;
+  }
+
+  .theme-grid-bg {
+    background-image:
+      linear-gradient(rgb(var(--color-grid) / 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--color-grid) / 0.025) 1px, transparent 1px);
   }
 
   .input-error {
@@ -390,21 +443,21 @@
   /* ============ 模态框 ============ */
   .modal-overlay {
     @apply fixed inset-0 z-50;
-    @apply bg-black/50 backdrop-blur-sm;
+    @apply bg-black/60 backdrop-blur-sm;
     @apply flex items-center justify-center p-2 sm:p-4;
   }
 
   .modal-content {
     @apply w-full;
     @apply max-h-[95vh] sm:max-h-[90vh];
-    @apply bg-white dark:bg-dark-800;
+    @apply bg-white dark:bg-dark-950;
     @apply rounded-2xl shadow-2xl;
-    @apply border border-gray-200 dark:border-dark-700;
+    @apply border border-gray-200 dark:border-dark-800;
     @apply flex flex-col;
   }
 
   .modal-header {
-    @apply border-b border-gray-200 px-4 py-3 dark:border-dark-700;
+    @apply border-b border-gray-200 px-4 py-3 dark:border-dark-800;
     @apply sm:px-6 sm:py-4;
     @apply flex items-center justify-between;
     @apply flex-shrink-0;
@@ -421,7 +474,7 @@
   }
 
   .modal-footer {
-    @apply border-t border-gray-200 px-4 py-3 dark:border-dark-700;
+    @apply border-t border-gray-200 px-4 py-3 dark:border-dark-800;
     @apply sm:px-6 sm:py-4;
     @apply flex items-center justify-end gap-3;
     @apply flex-shrink-0;
@@ -671,7 +724,11 @@
   }
 
   .switch-active {
-    @apply bg-primary-500;
+    @apply bg-green-500;
+  }
+
+  [role='switch'][aria-checked='true'] {
+    @apply bg-green-500;
   }
 
   .switch-thumb {
@@ -748,11 +805,6 @@
 }
 
 @layer utilities {
-  /* 文字渐变 */
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent;
-  }
-
   /* 玻璃效果 */
   .glass {
     @apply bg-white/80 backdrop-blur-xl dark:bg-dark-800/80;
@@ -774,5 +826,39 @@
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition-to-light::view-transition-group(root),
+  html.theme-transition-to-dark::view-transition-group(root) {
+    animation: none;
+  }
+
+  html.theme-transition-to-light::view-transition-old(root),
+  html.theme-transition-to-dark::view-transition-old(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  html.theme-transition-to-light::view-transition-new(root),
+  html.theme-transition-to-dark::view-transition-new(root) {
+    animation: theme-circle-reveal 1300ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    clip-path: circle(0 at var(--theme-wipe-x, 50vw) var(--theme-wipe-y, 50vh));
+    mix-blend-mode: normal;
+  }
+
+  html.theme-transition-to-light::view-transition-new(root) {
+    filter: drop-shadow(0 0 16px rgb(66 130 135 / 0.24));
+  }
+
+  html.theme-transition-to-dark::view-transition-new(root) {
+    filter: drop-shadow(0 0 16px rgb(206 242 243 / 0.22));
+  }
+
+  @keyframes theme-circle-reveal {
+    to {
+      clip-path: circle(150vmax at var(--theme-wipe-x, 50vw) var(--theme-wipe-y, 50vh));
+    }
   }
 }

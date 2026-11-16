@@ -5,6 +5,8 @@ import AmountInput from '../AmountInput.vue'
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
     t: (key: string, params?: Record<string, unknown>) =>
+      key === 'payment.checkout.badgeBonus' ? `+${params?.percent}%` :
+      key === 'payment.checkout.badgeDiscount' ? `${params?.percent}% OFF` :
       params && 'amount' in params ? `${key} ${String(params.amount)}` : key,
   }),
 }))

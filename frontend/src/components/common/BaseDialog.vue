@@ -4,14 +4,20 @@
       <div
         v-if="show"
         class="modal-overlay"
-        :style="zIndexStyle"
+        :class="overlayClass"
+        :style="[zIndexStyle, overlayStyle]"
         :aria-labelledby="dialogId"
         role="dialog"
         aria-modal="true"
         @click.self="handleClose"
       >
         <!-- Modal panel -->
-        <div ref="dialogRef" :class="['modal-content', widthClasses]" @click.stop>
+        <div
+          ref="dialogRef"
+          :class="['modal-content', widthClasses, contentClass]"
+          :style="contentStyle"
+          @click.stop
+        >
           <!-- Header -->
           <div class="modal-header">
             <h3 :id="dialogId" class="modal-title">
@@ -49,6 +55,7 @@ const openDialogs = new Set<string>()
 
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
+import type { CSSProperties } from 'vue'
 import Icon from '@/components/icons/Icon.vue'
 
 // 生成唯一ID以避免多个对话框时ID冲突
@@ -69,6 +76,10 @@ interface Props {
   closeOnClickOutside?: boolean
   showCloseButton?: boolean
   zIndex?: number
+  overlayClass?: string
+  overlayStyle?: CSSProperties
+  contentClass?: string
+  contentStyle?: CSSProperties
 }
 
 interface Emits {

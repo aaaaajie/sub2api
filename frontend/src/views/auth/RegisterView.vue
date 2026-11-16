@@ -1,8 +1,8 @@
 <template>
-  <AuthLayout>
+  <AuthLayout :embedded="embedded">
     <div class="space-y-6">
       <!-- Title -->
-      <div class="text-center">
+      <div v-if="!embedded" class="text-center">
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
           {{ t('auth.createAccount') }}
         </h2>
@@ -353,7 +353,16 @@
     <template #footer>
       <p class="text-gray-500 dark:text-dark-400">
         {{ t('auth.alreadyHaveAccount') }}
+        <button
+          v-if="embedded"
+          type="button"
+          class="font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+          @click="emit('login')"
+        >
+          {{ t('auth.signIn') }}
+        </button>
         <router-link
+          v-else
           to="/login"
           class="font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
         >
@@ -402,6 +411,17 @@ import type { LoginAgreementDocument } from '@/types'
 
 const { t, locale } = useI18n()
 const LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+  redirectTo?: string
+}>(), {
+  embedded: false,
+  redirectTo: '/data-dashboard'
+})
+const emit = defineEmits<{
+  login: []
+  success: []
+}>()
 
 // ==================== Router & Stores ====================
 
@@ -1066,6 +1086,7 @@ async function handleRegister(): Promise<void> {
           tencent_captcha_randstr: tencentCaptchaEnabled.value ? tencentCaptchaRandstr.value : undefined,
           promo_code: formData.promo_code || undefined,
           invitation_code: formData.invitation_code || undefined,
+          pending_redirect: getRegistrationRedirect(),
           ...(affCode ? { aff_code: affCode } : {})
         })
       )
@@ -1092,8 +1113,11 @@ async function handleRegister(): Promise<void> {
     // Show success toast
     appStore.showSuccess(t('auth.accountCreatedSuccess', { siteName: siteName.value }))
 
-    // Redirect to dashboard
-    await router.push('/dashboard')
+    if (props.embedded) {
+      emit('success')
+    } else {
+      await router.push(getRegistrationRedirect())
+    }
   } catch (error: unknown) {
     // Handle registration error
     errorMessage.value = buildRegistrationErrorMessage(error, t('auth.registrationFailed'))
@@ -1106,6 +1130,15 @@ async function handleRegister(): Promise<void> {
     }
     isLoading.value = false
   }
+}
+
+function getRegistrationRedirect(): string {
+  const queryRedirect = route.query.redirect
+  const value = typeof queryRedirect === 'string' ? queryRedirect : props.redirectTo
+  if (typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.includes('://')) {
+    return value
+  }
+  return '/data-dashboard'
 }
 
 function buildRegistrationErrorMessage(error: unknown, fallback: string): string {

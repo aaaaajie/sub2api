@@ -17,14 +17,24 @@ import (
 
 type dailyUsageRepoStub struct {
 	service.UsageLogRepository
-	trend []usagestats.TrendDataPoint
+	trend          []usagestats.TrendDataPoint
+	recentActivity []service.RecentUsageActivityHour
 
-	called      bool
-	startTime   time.Time
-	endTime     time.Time
-	granularity string
-	userID      int64
-	apiKeyID    int64
+	called              bool
+	calls               int
+	recentActivityCalls int
+	recentActivityLimit int
+	startTime           time.Time
+	endTime             time.Time
+	granularity         string
+	userID              int64
+	apiKeyID            int64
+}
+
+func (s *dailyUsageRepoStub) GetRecentUsageActivityHours(_ context.Context, limit int) ([]service.RecentUsageActivityHour, error) {
+	s.recentActivityCalls++
+	s.recentActivityLimit = limit
+	return s.recentActivity, nil
 }
 
 func (s *dailyUsageRepoStub) GetUsageTrendWithFilters(
@@ -38,6 +48,7 @@ func (s *dailyUsageRepoStub) GetUsageTrendWithFilters(
 	billingType *int8,
 ) ([]usagestats.TrendDataPoint, error) {
 	s.called = true
+	s.calls++
 	s.startTime = startTime
 	s.endTime = endTime
 	s.granularity = granularity

@@ -10,11 +10,6 @@
     </div>
     <div :class="props.embedded ? '' : 'px-6 py-6'">
       <form @submit.prevent="handleUpdateProfile" class="space-y-4">
-        <div v-if="props.embedded">
-          <p class="text-sm font-semibold text-gray-900 dark:text-white">
-            {{ t('profile.editProfile') }}
-          </p>
-        </div>
         <div>
           <label for="username" class="input-label">
             {{ t('profile.username') }}
@@ -53,6 +48,7 @@ const props = withDefaults(defineProps<{
   embedded: false,
 })
 
+const emit = defineEmits<{ saved: [] }>()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const appStore = useAppStore()
@@ -82,6 +78,7 @@ const handleUpdateProfile = async () => {
     savedUsername = updatedUser.username
     authStore.user = updatedUser
     appStore.showSuccess(t('profile.updateSuccess'))
+    emit('saved')
   } catch (error: unknown) {
     appStore.showError(extractApiErrorMessage(error, t('profile.updateFailed')))
   } finally {

@@ -97,6 +97,7 @@ func createGroupRecord(ctx context.Context, client *dbent.Client, groupIn *servi
 	builder := client.Group.Create().
 		SetName(groupIn.Name).
 		SetDescription(groupIn.Description).
+		SetSystemPrompt(groupIn.SystemPrompt).
 		SetPlatform(groupIn.Platform).
 		SetRateMultiplier(groupIn.RateMultiplier).
 		SetSortOrder(groupIn.SortOrder).
@@ -290,6 +291,7 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 	builder := r.client.Group.UpdateOneID(groupIn.ID).
 		SetName(groupIn.Name).
 		SetDescription(groupIn.Description).
+		SetSystemPrompt(groupIn.SystemPrompt).
 		SetPlatform(groupIn.Platform).
 		SetRateMultiplier(groupIn.RateMultiplier).
 		SetIsExclusive(groupIn.IsExclusive).

@@ -20,6 +20,7 @@ type Group struct {
 	Name           string
 	Description    string
 	I18n           GroupI18n // 名称与描述的界面语言译文；缺失的语言沿用 Name/Description
+	SystemPrompt   string    // 分组级前置系统提示词，仅在网关请求中注入
 	Platform       string
 	RateMultiplier float64
 	// 高峰时段倍率：peak_rate_enabled 为 true 且当前时刻处于 [PeakStart, PeakEnd) 时，
@@ -142,6 +143,9 @@ type Group struct {
 	ActiveAccountCount      int64
 	RateLimitedAccountCount int64
 }
+
+// MaxGroupSystemPromptRunes caps the per-group prompt size accepted by admin APIs.
+const MaxGroupSystemPromptRunes = 8192
 
 // IsGroupBindableInSimpleMode is the shared policy for groups that may be
 // surfaced and bound to accounts while running in simple mode.

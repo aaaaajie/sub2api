@@ -238,8 +238,6 @@ export interface PublicSettings {
   api_base_url: string
   contact_info: string
   doc_url: string
-  home_content: string
-  compact_home_enabled: boolean
   hide_ccs_import_button: boolean
   payment_enabled: boolean
   risk_control_enabled: boolean
@@ -642,6 +640,8 @@ export interface Group {
 export interface AdminGroup extends Group {
   // 管理端的 name / description 始终是原字段，各语言译文另放在 i18n 里
   i18n?: GroupI18n
+	// Only administrators receive this per-group gateway instruction.
+	system_prompt?: string
   force_openai_fast: boolean
   free_openai_fast: boolean
   model_pricing: import('@/api/admin/channels').ChannelModelPricing[]
@@ -809,6 +809,7 @@ export interface CreateGroupRequest {
   name: string
   description?: string | null
   i18n?: GroupI18n
+  system_prompt?: string
   platform?: GroupPlatform
   rate_multiplier?: number
   is_exclusive?: boolean
@@ -876,6 +877,7 @@ export interface UpdateGroupRequest {
   name?: string
   description?: string | null
   i18n?: GroupI18n
+  system_prompt?: string
   platform?: GroupPlatform
   rate_multiplier?: number
   is_exclusive?: boolean

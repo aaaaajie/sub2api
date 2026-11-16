@@ -509,6 +509,17 @@
             :placeholder="t('admin.groups.optionalDescription')"
           />
         </div>
+        <div v-if="!authStore.isSimpleMode">
+          <label class="input-label">{{ t("admin.groups.form.systemPrompt") }}</label>
+          <textarea
+            v-model="createForm.system_prompt"
+            class="input w-full min-h-[140px] resize-y"
+            rows="6"
+            maxlength="8192"
+            :placeholder="t('admin.groups.form.systemPromptPlaceholder')"
+          ></textarea>
+          <p class="input-hint">{{ t("admin.groups.form.systemPromptHint") }}</p>
+        </div>
         <div>
           <label class="input-label">{{
             t("admin.groups.form.platform")
@@ -2159,6 +2170,17 @@
             multiline
             rows="3"
           />
+        </div>
+        <div v-if="!authStore.isSimpleMode">
+          <label class="input-label">{{ t("admin.groups.form.systemPrompt") }}</label>
+          <textarea
+            v-model="editForm.system_prompt"
+            class="input w-full min-h-[140px] resize-y"
+            rows="6"
+            maxlength="8192"
+            :placeholder="t('admin.groups.form.systemPromptPlaceholder')"
+          ></textarea>
+          <p class="input-hint">{{ t("admin.groups.form.systemPromptHint") }}</p>
         </div>
         <div>
           <label class="input-label">{{
@@ -4975,6 +4997,7 @@ const submitEditAllowlistCustomEntry = () => {
 const createForm = reactive({
   name: "",
   description: "",
+  system_prompt: "",
   i18n: {} as GroupI18n,
   platform: "anthropic" as GroupPlatform,
   rate_multiplier: 1.0,
@@ -5341,6 +5364,7 @@ const convertApiFormatToRoutingRules = async (
 const editForm = reactive({
   name: "",
   description: "",
+  system_prompt: "",
   i18n: {} as GroupI18n,
   platform: "anthropic" as GroupPlatform,
   rate_multiplier: 1.0,
@@ -5818,6 +5842,7 @@ const closeCreateModal = () => {
   clearAllAccountSearchState();
   createForm.name = "";
   createForm.description = "";
+  createForm.system_prompt = "";
   createForm.i18n = {};
   createForm.platform = "anthropic";
   createForm.rate_multiplier = 1.0;
@@ -6102,6 +6127,7 @@ const handleEdit = async (group: AdminGroup) => {
   editingGroup.value = group;
   editForm.name = group.name;
   editForm.description = group.description || "";
+  editForm.system_prompt = group.system_prompt || "";
   editForm.i18n = Object.fromEntries(
     Object.entries(group.i18n ?? {}).map(([locale, text]) => [
       locale,
@@ -6234,6 +6260,7 @@ const closeEditModal = () => {
   showEditModal.value = false;
   editingGroup.value = null;
   editForm.max_reasoning_effort = "";
+  editForm.system_prompt = "";
   editForm.max_reasoning_effort_over_limit = reasoningEffortOverLimitDowngrade;
   editForm.reasoning_effort_mappings = [];
   editReasoningEffortPolicyRef.value?.resetValidation();

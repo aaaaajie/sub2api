@@ -42,7 +42,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/auth/LoginView.vue'),
+    component: () => import('@/views/HomeView.vue'),
     meta: {
       requiresAuth: false,
       title: 'Login',
@@ -192,6 +192,17 @@ const routes: RouteRecordRaw[] = [
     redirect: '/home'
   },
   {
+    path: '/data-dashboard',
+    name: 'DataDashboard',
+    component: () => import('@/views/user/DataDashboardView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Data Dashboard',
+      titleKey: 'nav.dataDashboard'
+    }
+  },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/user/DashboardView.vue'),
@@ -332,8 +343,8 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
       requiresAdmin: false,
       title: 'Purchase Subscription',
-      titleKey: 'nav.buySubscription',
-      descriptionKey: 'purchase.description',
+      titleKey: 'payment.checkout.title',
+      descriptionKey: 'payment.checkout.description',
       requiresPayment: true
     }
   },
@@ -802,6 +813,18 @@ function isBackendModePublicRouteAllowed(path: string, hasPendingAuthSession: bo
   return false
 }
 
+function resolvePostLoginDestination(value: unknown): string {
+  if (
+    typeof value === 'string' &&
+    value.startsWith('/') &&
+    !value.startsWith('//') &&
+    !value.includes('://')
+  ) {
+    return value
+  }
+  return '/data-dashboard'
+}
+
 router.beforeEach(async (to, _from, next) => {
   // 开始导航加载状态
   navigationLoading.startNavigation()
@@ -843,14 +866,12 @@ router.beforeEach(async (to, _from, next) => {
   if (!requiresAuth) {
     // If already authenticated and trying to access login/register, redirect to appropriate dashboard
     if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
-      // In backend mode, non-admin users should NOT be redirected away from login
-      // (they are blocked from all protected routes, so redirecting would cause a loop)
       if (appStore.backendModeEnabled && !authStore.isAdmin) {
-        next()
+        next(resolvePostLoginDestination(to.query.redirect))
         return
       }
       // Admin users go to admin dashboard, regular users go to user dashboard
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      next(resolvePostLoginDestination(to.query.redirect))
       return
     }
     // Model Plaza:公开路由但受「启用开关 + 可选强制登录」双重控制(后端同口径 fail-closed)
@@ -908,8 +929,8 @@ router.beforeEach(async (to, _from, next) => {
 
   // Check admin requirement
   if (requiresAdmin && !authStore.isAdmin) {
-    // User is authenticated but not admin, redirect to user dashboard
-    next('/dashboard')
+    // User is authenticated but not admin, redirect to the user-facing landing dashboard.
+    next('/data-dashboard')
     return
   }
 
@@ -988,6 +1009,10 @@ router.beforeEach(async (to, _from, next) => {
   // Backend mode: admin gets full access, non-admin blocked
   if (appStore.backendModeEnabled) {
     if (authStore.isAuthenticated && authStore.isAdmin) {
+      next()
+      return
+    }
+    if (authStore.isAuthenticated && to.path === '/data-dashboard') {
       next()
       return
     }

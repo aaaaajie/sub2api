@@ -1,3 +1,5 @@
+import { useAppStore } from '@/stores/app'
+import { keysAPI } from '@/api/keys'
 import { onMounted, onUnmounted, nextTick } from 'vue'
 import { driver, type Driver, type DriveStep } from 'driver.js'
 import 'driver.js/dist/driver.css'
@@ -14,6 +16,8 @@ export interface OnboardingOptions {
 export function useOnboardingTour(options: OnboardingOptions) {
   const { t } = useI18n()
   const userStore = useUserStore()
+  const appStore = useAppStore()
+  let disposed = false
   const onboardingStore = useOnboardingStore()
   const storageVersion = 'v4_interactive' // Bump version for new tour type
 
@@ -95,7 +99,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
     // 动态获取当前用户角色和步骤
     const isAdmin = userStore.user?.role === 'admin'
     const isSimpleMode = userStore.isSimpleMode
-    const steps = isAdmin ? getAdminSteps(t, isSimpleMode) : getUserSteps(t)
+    const steps = isAdmin ? getAdminSteps(t, isSimpleMode) : getUserSteps(t, { showImport: !appStore.cachedPublicSettings?.hide_ccs_import_button, showDocs: !!appStore.docUrl })
 
     // 确保 DOM 就绪
     await nextTick()
@@ -114,7 +118,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
     driverInstance = driver({
       showProgress: true,
       steps,
-      animate: true,
+      animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
       allowClose: false, // 禁止点击遮罩关闭
       stagePadding: 4,
       popoverClass: 'theme-tour-popover',
@@ -289,7 +293,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
 
           // Check if this is a submit button - if so, don't bind auto-advance listeners
           // Let business code (e.g., handleCreateGroup) manually call nextStep after success
-          const isSubmitButton = htmlElement.getAttribute('type') === 'submit' ||
+          const isSubmitButton = htmlElement.hasAttribute('data-tour-manual') || htmlElement.getAttribute('type') === 'submit' ||
                                 (htmlElement.tagName === 'BUTTON' && htmlElement.closest('form'))
 
           if (isSubmitButton) {
@@ -506,7 +510,15 @@ export function useOnboardingTour(options: OnboardingOptions) {
     if (delay > 0) {
       await new Promise(resolve => setTimeout(resolve, delay))
     }
-    driverInstance.moveNext()
+    const steps = driverInstance.getConfig().steps || []
+    const next = steps[(driverInstance.getActiveIndex() ?? 0) + 1]
+    if (!next) {
+      markAsSeen()
+      driverInstance.destroy()
+      return
+    }
+    if (typeof next.element === 'string') await ensureElement(next.element, TIMING.ELEMENT_TIMEOUT_MS)
+    if (driverInstance.isActive()) driverInstance.moveNext()
   }
 
   const isCurrentStep = (elementSelector: string): boolean => {
@@ -536,19 +548,26 @@ export function useOnboardingTour(options: OnboardingOptions) {
       return
     }
 
-    // 只在管理员+标准模式下自动启动
+    if (!options.autoStart || hasSeen()) return
     const isAdmin = userStore.user?.role === 'admin'
     if (!isAdmin) {
-      return
+      try {
+        const result = await keysAPI.list(1, 1)
+        if (disposed) return
+        if (result.total > 0) { markAsSeen(); return }
+      } catch {
+        // A failed eligibility check must not interrupt normal navigation.
+        return
+      }
     }
-
-    if (!options.autoStart || hasSeen()) return
+    if (disposed || onboardingStore.isDriverActive()) return
     autoStartTimer = setTimeout(() => {
       void startTour()
-    }, TIMING.AUTO_START_DELAY_MS)
+    }, isAdmin ? TIMING.AUTO_START_DELAY_MS : 2500)
   })
 
   onUnmounted(() => {
+    disposed = true
     if (autoStartTimer) {
       clearTimeout(autoStartTimer)
       autoStartTimer = null

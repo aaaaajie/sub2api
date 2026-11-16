@@ -122,7 +122,7 @@ describe('OidcCallbackView', () => {
     expect(setToken).toHaveBeenCalledWith('legacy-access-token')
     expect(localStorage.getItem('refresh_token')).toBe('legacy-refresh-token')
     expect(localStorage.getItem('token_expires_at')).not.toBeNull()
-    expect(showSuccess).toHaveBeenCalledWith('auth.loginSuccess')
+    expect(showSuccess).not.toHaveBeenCalled()
     expect(replace).toHaveBeenCalledWith('/legacy-dashboard')
   })
 

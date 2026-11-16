@@ -1,70 +1,22 @@
 <template>
-  <div class="space-y-4">
-    <!-- Quick Amount Buttons -->
+  <div class="recharge-amounts">
     <div>
-      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {{ t('payment.quickAmounts') }}
-      </label>
-      <div class="grid grid-cols-3 gap-x-4 gap-y-4 pt-2">
-        <button
-          v-for="amt in filteredAmounts"
-          :key="amt"
-          type="button"
-          :class="[
-            'relative rounded-lg border-2 px-3 py-3 text-center font-medium transition-colors',
-            modelValue === amt
-              ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/40 dark:text-primary-300'
-              : quoteFor(amt).percent > 0
-                ? 'border-red-200 bg-white text-gray-700 hover:border-red-300 dark:border-red-500/40 dark:bg-dark-800 dark:text-gray-200 dark:hover:border-red-400/60'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-200 dark:hover:border-dark-500',
-          ]"
-          :data-testid="`quick-amount-${amt}`"
-          @click="selectAmount(amt)"
-        >
-          <!-- 促销价签（单行）：仅命中档位的金额显示；红底白字、内圈点线、右侧圆孔、整体旋转 -->
-          <span
-            v-if="quoteFor(amt).percent > 0"
-            class="pointer-events-none absolute -right-2 -top-3 z-10 rotate-12"
-            data-testid="quick-amount-bonus-badge"
-          >
-            <span
-              class="relative flex items-center gap-1 whitespace-nowrap rounded bg-red-600 py-0.5 pl-1.5 pr-1 text-[11px] font-extrabold leading-tight tracking-tight text-white shadow-md ring-2 ring-white before:pointer-events-none before:absolute before:inset-[2px] before:rounded-sm before:border before:border-dotted before:border-white/70 dark:bg-red-500 dark:ring-dark-800"
-            >
-              <span>{{ badgeText(amt) }}</span>
-              <span class="h-1 w-1 shrink-0 rounded-full bg-white"></span>
-            </span>
-          </span>
-          <span class="block">{{ amt }}</span>
-          <!-- 配置了优惠阶梯时，所有按钮都显示第二行，保持高度一致：赠金显示到账 USD，折扣显示折后实付 -->
-          <span
-            v-if="showSecondLine"
-            :class="[
-              'mt-0.5 block text-[11px] font-normal leading-tight',
-              quoteFor(amt).percent > 0 ? 'text-red-600 dark:text-red-300' : 'text-gray-400 dark:text-gray-500',
-            ]"
-            data-testid="quick-amount-credited"
-          >{{ secondLine(amt) }}</span>
+      <div class="amount-heading"><span>{{ t('payment.quickAmounts') }}</span><span class="amount-currency">{{ normalizePaymentCurrency(currency) }}</span></div>
+      <div class="amount-grid">
+        <button v-for="amt in filteredAmounts" :key="amt" type="button" :class="['amount-option', { 'has-bonus': quoteFor(amt).percent > 0 }]" :aria-pressed="modelValue === amt"
+          :data-testid="`quick-amount-${amt}`" @click="selectAmount(amt)">
+          <span class="amount-value"><small>{{ currencySymbol(currency) }}</small>{{ amt }}</span>
+          <span v-if="quoteFor(amt).percent > 0" class="amount-bonus" data-testid="quick-amount-bonus-badge">{{ badgeText(amt) }}</span>
+          <span v-if="showSecondLine" class="amount-preview" data-testid="quick-amount-credited">{{ secondLine(amt) }}</span>
         </button>
       </div>
     </div>
-
-    <!-- Custom Amount Input -->
-    <div>
-      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {{ t('payment.customAmount') }}
-      </label>
-      <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-dark-500">
-          $
-        </span>
-        <input
-          type="text"
-          inputmode="decimal"
-          :value="customText"
-          :placeholder="placeholderText"
-          class="input w-full py-3 pl-8 pr-4"
-          @input="handleInput"
-        />
+    <div class="custom-amount">
+      <label for="recharge-custom-amount">{{ t('payment.customAmount') }}</label>
+      <div class="custom-amount-input">
+        <span aria-hidden="true">{{ currencySymbol(currency) }}</span>
+        <input id="recharge-custom-amount" type="text" inputmode="decimal" :value="customText" :placeholder="placeholderText" @input="handleInput" />
+        <small>{{ normalizePaymentCurrency(currency) }}</small>
       </div>
     </div>
   </div>
@@ -75,7 +27,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RechargeBonusTier } from '@/types/payment'
 import { formatRechargeBonusNumber, quoteRechargeBonus, type RechargeBonusMode } from '@/utils/rechargeBonus'
-import { formatPaymentAmount } from './currency'
+import { formatPaymentAmount, currencySymbol, normalizePaymentCurrency } from './currency'
 
 const props = withDefaults(defineProps<{
   amounts?: number[]
@@ -135,7 +87,7 @@ function quoteFor(amt: number) {
 // 价签文案：赠金「+20%」，折扣「20% OFF」
 function badgeText(amt: number): string {
   const percent = formatRechargeBonusNumber(quoteFor(amt).percent)
-  return props.bonusMode === 'discount' ? `${percent}% OFF` : `+${percent}%`
+  return t(props.bonusMode === 'discount' ? 'payment.checkout.badgeDiscount' : 'payment.checkout.badgeBonus', { percent })
 }
 
 function secondLine(amt: number): string {
@@ -186,3 +138,28 @@ watch(() => props.modelValue, (v) => {
   }
 }, { immediate: true })
 </script>
+
+<style scoped>
+.recharge-amounts { display: flex; flex-direction: column; gap: 22px; }
+.amount-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; font-size: 12px; font-weight: 500; @apply text-gray-700 dark:text-gray-300; }
+.amount-heading .amount-currency { font-size: 10px; font-weight: 400; @apply text-gray-400 dark:text-gray-500; }
+.amount-grid { padding-top: 6px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 10px; }
+.amount-option { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 68px; gap: 6px; padding: 14px 6px; border: 1px solid; border-radius: 13px; transition: background-color 160ms, border-color 160ms; @apply border-gray-200/80 text-gray-700 dark:border-white/10 dark:text-gray-300; }
+.amount-option:hover { @apply border-gray-400 dark:border-white/25; }
+.amount-option[aria-pressed='true'] { @apply border-gray-900 bg-gray-900 text-white dark:border-gray-200 dark:bg-gray-200 dark:text-gray-900; }
+.amount-value { display: flex; align-items: baseline; gap: 3px; font-size: 18px; font-weight: 500; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+.amount-value small { font-size: 11px; opacity: .6; }
+.amount-option.has-bonus { @apply border-[#42816d]/30 dark:border-[#9acdb8]/30; }
+.amount-option.has-bonus[aria-pressed='true'] { @apply border-gray-900 dark:border-gray-200; }
+.amount-bonus { position: absolute; top: -9px; right: 8px; border-radius: 6px; padding: 3px 7px; font-size: 10px; font-weight: 500; color: #42816d; background: #e5efe9; }
+:global(.dark) .amount-bonus { color: #9acdb8; background: #1c3029; }
+.amount-option[aria-pressed='true'] .amount-bonus { color: inherit; background: rgb(128 128 128 / 15%); }
+.amount-preview { font-size: 10px; opacity: .65; line-height: 1.4; }
+.custom-amount label { display: block; margin-bottom: 10px; font-size: 12px; @apply text-gray-500 dark:text-gray-400; }
+.custom-amount-input { display: flex; align-items: center; gap: 10px; padding: 0 14px; border: 1px solid; border-radius: 12px; @apply border-gray-200 dark:border-white/10; }
+.custom-amount-input:focus-within { @apply border-gray-500 dark:border-gray-400; }
+.custom-amount-input > span, .custom-amount-input small { flex-shrink: 0; font-size: 11px; @apply text-gray-400 dark:text-gray-500; }
+.custom-amount-input input { width: 100%; min-width: 0; border: 0; background: transparent; padding: 12px 0; outline: none; box-shadow: none; font-size: 13px; font-variant-numeric: tabular-nums; @apply text-gray-900 dark:text-gray-100; }
+.amount-option:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .amount-option { transition: none; } }
+</style>

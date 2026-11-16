@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { installRouteTransitions } from '@/utils/route-transition'
+import '@/styles/route-transition.css'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Toast from '@/components/common/Toast.vue'
@@ -14,6 +16,7 @@ import { resolveSiteBillingMode } from '@/utils/siteBillingMode'
 
 const router = useRouter()
 const route = useRoute()
+const removeRouteTransitions = installRouteTransitions(router)
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const subscriptionStore = useSubscriptionStore()
@@ -135,6 +138,7 @@ router.afterEach(() => {
 })
 
 onBeforeUnmount(() => {
+  removeRouteTransitions()
   document.removeEventListener('visibilitychange', onVisibilityChange)
   window.removeEventListener('admin-compliance-required', onAdminComplianceRequired)
 })

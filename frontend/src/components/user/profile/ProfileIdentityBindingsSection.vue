@@ -23,7 +23,7 @@
       </div>
 
       <div
-        v-for="item in providerItems"
+        v-for="item in visibleProviderItems"
         :key="item.provider"
         :class="rowClass"
       >
@@ -191,6 +191,31 @@
           </div>
         </div>
       </div>
+
+      <button
+        v-if="collapseUnboundMethods && unboundProviderItems.length"
+        data-testid="profile-binding-more-methods"
+        type="button"
+        class="flex w-full items-center justify-between rounded-xl border border-dashed border-gray-200 px-4 py-3 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50/70 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 dark:border-dark-700 dark:text-gray-300 dark:hover:border-dark-600 dark:hover:bg-white/[0.035] dark:hover:text-white"
+        :aria-expanded="showMoreMethods"
+        @click="showMoreMethods = !showMoreMethods"
+      >
+        <span class="flex items-center gap-2">
+          {{ showMoreMethods ? t('profile.authBindings.lessMethods') : t('profile.authBindings.moreMethods') }}
+          <span
+            v-if="!showMoreMethods"
+            class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] tabular-nums text-gray-500 dark:bg-white/[0.06] dark:text-gray-400"
+          >
+            {{ unboundProviderItems.length }}
+          </span>
+        </span>
+        <Icon
+          name="chevronDown"
+          size="sm"
+          class="text-gray-400 transition-transform duration-200"
+          :class="showMoreMethods && 'rotate-180'"
+        />
+      </button>
     </div>
   </div>
 </template>
@@ -481,6 +506,16 @@ const providerItems = computed(() => [
     details: getBindingDetails('wechat'),
   },
 ])
+
+const collapseUnboundMethods = computed(() => props.embedded && compact.value)
+const showMoreMethods = ref(false)
+const unboundProviderItems = computed(() => providerItems.value.filter((item) => !item.bound))
+const visibleProviderItems = computed(() => {
+  if (!collapseUnboundMethods.value || showMoreMethods.value) {
+    return providerItems.value
+  }
+  return providerItems.value.filter((item) => item.bound)
+})
 
 function providerInitial(provider: UserAuthProvider): string {
   if (provider === 'linuxdo') {

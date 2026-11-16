@@ -24,7 +24,7 @@ async function openOrders() {
   const wrapper = mount(UserOrdersView, {
     global: { stubs: {
       AppLayout: { template: '<div><slot /></div>' },
-      OrderTable: true, BaseDialog: true, Icon: true, Pagination: true, teleport: true
+      UserOrderList: true, BaseDialog: true, Icon: true, Pagination: true, teleport: true
     } }
   })
   await flushPromises()
@@ -51,4 +51,17 @@ describe('order status filtering', () => {
     await flushPromises()
     expect(api.getMyOrders).toHaveBeenLastCalledWith({ page: 4, page_size: 20, status: undefined })
   })
+
+  it('shows a retryable error instead of an empty state after refresh fails', async () => {
+    const wrapper = await openOrders()
+    api.getMyOrders.mockRejectedValueOnce(new Error('Network unavailable'))
+    await wrapper.get('[title="common.refresh"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+    expect(wrapper.find('user-order-list-stub').exists()).toBe(false)
+    await wrapper.get('[role="alert"] button').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
 })

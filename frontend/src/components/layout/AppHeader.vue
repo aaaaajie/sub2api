@@ -1,9 +1,10 @@
 <template>
-  <header class="glass sticky top-0 z-30 border-b border-gray-200/50 dark:border-dark-700/50">
-    <div class="flex h-16 items-center justify-between gap-2 px-2 sm:px-4 md:px-6">
+  <header class="sticky top-0 z-30 bg-white transition-colors duration-200 dark:bg-dark-950">
+    <div class="flex h-16 items-center justify-between gap-2 px-2 pt-2 sm:px-4 md:px-6">
       <!-- Left: Mobile Menu Toggle + Page Title -->
       <div class="flex shrink-0 items-center gap-2 sm:gap-4">
         <button
+          v-if="props.showSidebarToggle"
           @click="toggleMobileSidebar"
           class="btn-ghost btn-icon lg:hidden"
           :aria-label="t('common.toggleMenu')"
@@ -11,7 +12,18 @@
           <Icon name="menu" size="md" />
         </button>
 
-        <div class="hidden lg:block">
+        <router-link
+          v-if="route.path === '/data-dashboard'"
+          to="/data-dashboard"
+          class="flex items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
+        >
+          <img :src="siteLogo || '/logo.svg'" alt="" class="h-8 w-8 shrink-0 rounded-lg object-contain sm:h-9 sm:w-9" />
+          <span class="text-sm font-semibold tracking-wide text-gray-800 dark:text-gray-200">{{ siteName }}</span>
+        </router-link>
+        <div
+          v-else-if="pageTitle || pageDescription"
+          :class="props.showSidebarToggle ? 'hidden lg:block' : 'block'"
+        >
           <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
             {{ pageTitle }}
           </h1>
@@ -21,7 +33,7 @@
         </div>
       </div>
 
-      <!-- Right: Announcements + Docs + Language + Subscriptions + Balance + User Dropdown -->
+      <!-- Right: Announcements + Docs + Model Plaza + Language + Balance + User Dropdown -->
       <div class="flex min-w-0 items-center gap-1 sm:gap-3">
         <!-- Announcement Bell -->
         <AnnouncementBell v-if="user" />
@@ -29,10 +41,11 @@
         <!-- Docs Link -->
         <a
           v-if="docUrl"
+          data-tour="header-docs"
           :href="docUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white sm:flex"
+          class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white sm:flex"
         >
           <Icon name="book" size="sm" />
           <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
@@ -50,32 +63,52 @@
           <span class="hidden sm:inline">{{ t('nav.modelPlaza') }}</span>
         </router-link>
 
-        <!-- Language Switcher -->
-        <LocaleSwitcher />
-
-        <!-- Subscription Progress (for users with active subscriptions; not mounted at all when the feature is off) -->
-        <SubscriptionProgressMini v-if="user && subscriptionFeatureEnabled" />
+        <!-- Theme Toggle -->
+        <button
+          @click="toggleTheme"
+          :title="isDark ? t('nav.lightMode') : t('nav.darkMode')"
+          :aria-label="isDark ? t('nav.lightMode') : t('nav.darkMode')"
+          class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:text-dark-300 dark:hover:bg-dark-800 dark:hover:text-white"
+        >
+          <Icon v-if="isDark" name="sun" size="sm" class="text-amber-400" />
+          <Icon v-else name="moon" size="sm" />
+        </button>
 
         <!-- Balance Display -->
         <div
           v-if="user"
-          class="group relative hidden items-center gap-2 rounded-xl bg-primary-50 px-3 py-1.5 dark:bg-primary-900/20 sm:flex"
+          class="group relative hidden items-center gap-2 rounded-xl bg-[#eef6f2] px-3 py-1.5 ring-1 ring-[#d4e7dd] dark:bg-[#10211d]/80 dark:ring-[#285043]/70 sm:flex"
         >
-          <svg
-            class="h-4 w-4 text-primary-600 dark:text-primary-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="1.5"
+          <button
+            type="button"
+            class="relative flex h-4 w-4 shrink-0 items-center justify-center rounded-sm text-[#3c806d] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 dark:text-[#8fcbb0]"
+            :aria-label="balanceHidden ? t('common.showBalance') : t('common.hideBalance')"
+            :title="balanceHidden ? t('common.showBalance') : t('common.hideBalance')"
+            @click.stop="toggleBalanceVisibility"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
+            <svg
+              class="absolute inset-0 h-4 w-4 transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
+              />
+            </svg>
+            <Icon
+              :name="balanceHidden ? 'eyeOff' : 'eye'"
+              size="sm"
+              class="absolute opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+              aria-hidden="true"
             />
-          </svg>
-          <span class="text-sm font-semibold text-primary-700 dark:text-primary-300">
-            {{ formatHeaderMoney(availableBalance) }}
+          </button>
+          <span class="text-sm font-semibold text-[#34715c] dark:text-[#a0d4bd]">
+            {{ formatBalanceMoney(availableBalance) }}
           </span>
           <span
             v-if="frozenBalance > 0"
@@ -84,20 +117,21 @@
             {{ balanceFrozenLabel }}
           </span>
           <div
+            v-if="frozenBalance > 0"
             class="pointer-events-none absolute right-0 top-full mt-2 hidden w-56 rounded-lg border border-gray-200 bg-white p-3 text-xs shadow-lg group-hover:block dark:border-dark-700 dark:bg-dark-800"
           >
             <div class="flex items-center justify-between">
               <span class="text-gray-500 dark:text-dark-400">{{ balanceAvailableText }}</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ formatHeaderMoney(availableBalance) }}</span>
+              <span class="font-medium text-[#34715c] dark:text-[#a0d4bd]">{{ formatBalanceMoney(availableBalance) }}</span>
             </div>
             <div class="mt-2 flex items-center justify-between">
               <span class="text-gray-500 dark:text-dark-400">{{ balanceFrozenText }}</span>
-              <span class="font-medium text-amber-700 dark:text-amber-200">{{ formatHeaderMoney(frozenBalance) }}</span>
+              <span class="font-medium text-amber-700 dark:text-amber-200">{{ formatBalanceMoney(frozenBalance) }}</span>
             </div>
             <div class="mt-2 border-t border-gray-100 pt-2 dark:border-dark-700">
               <div class="flex items-center justify-between">
                 <span class="text-gray-500 dark:text-dark-400">{{ balanceTotalText }}</span>
-                <span class="font-semibold text-gray-900 dark:text-white">{{ formatHeaderMoney(totalBalance) }}</span>
+                <span class="font-semibold text-gray-900 dark:text-white">{{ formatBalanceMoney(totalBalance) }}</span>
               </div>
             </div>
           </div>
@@ -107,10 +141,10 @@
         <div v-if="user" class="relative" ref="dropdownRef">
           <button
             @click="toggleDropdown"
-            class="flex items-center gap-2 rounded-xl p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-dark-800"
+            class="flex items-center justify-center rounded-xl p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-dark-800"
             :aria-label="t('common.userMenu')"
           >
-            <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-sm font-medium text-white shadow-sm">
+            <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-gray-900 text-sm font-medium text-white shadow-sm dark:bg-gray-100 dark:text-gray-900">
               <img
                 v-if="avatarUrl"
                 :src="avatarUrl"
@@ -119,20 +153,11 @@
               >
               <span v-else>{{ userInitials }}</span>
             </div>
-            <div class="hidden text-left md:block">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">
-                {{ displayName }}
-              </div>
-              <div class="text-xs text-gray-500 dark:text-dark-400">
-                {{ t('admin.users.roles.' + user.role) }}
-              </div>
-            </div>
-            <Icon name="chevronDown" size="sm" class="hidden text-gray-400 md:block" />
           </button>
 
           <!-- Dropdown Menu -->
           <transition name="dropdown">
-            <div v-if="dropdownOpen" class="dropdown right-0 mt-2 w-56">
+            <div v-if="dropdownOpen" class="dropdown avatar-menu right-0 mt-2 w-56">
               <!-- User Info -->
               <div class="border-b border-gray-100 px-4 py-3 dark:border-dark-700">
                 <div class="text-sm font-medium text-gray-900 dark:text-white">
@@ -146,11 +171,20 @@
                 <div class="text-xs text-gray-500 dark:text-dark-400">
                   {{ t('common.balance') }}
                 </div>
-                <div class="text-sm font-semibold text-primary-600 dark:text-primary-400">
-                  {{ formatHeaderMoney(availableBalance) }}
+                <div class="flex items-center justify-between gap-3 text-sm font-semibold text-[#34715c] dark:text-[#a0d4bd]">
+                  <span>{{ formatBalanceMoney(availableBalance) }}</span>
+                  <button
+                    type="button"
+                    class="rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-white"
+                    :aria-label="balanceHidden ? t('common.showBalance') : t('common.hideBalance')"
+                    :title="balanceHidden ? t('common.showBalance') : t('common.hideBalance')"
+                    @click.stop="toggleBalanceVisibility"
+                  >
+                    <Icon :name="balanceHidden ? 'eyeOff' : 'eye'" size="sm" />
+                  </button>
                 </div>
                 <div v-if="frozenBalance > 0" class="mt-1 text-xs text-amber-600 dark:text-amber-300">
-                  {{ balanceFrozenText }} {{ formatHeaderMoney(frozenBalance) }}
+                  {{ balanceFrozenText }} {{ formatBalanceMoney(frozenBalance) }}
                 </div>
               </div>
 
@@ -160,9 +194,49 @@
                   {{ t('nav.profile') }}
                 </router-link>
 
-                <router-link to="/keys" @click="closeDropdown" class="dropdown-item">
-                  <Icon name="key" size="sm" />
-                  {{ t('nav.apiKeys') }}
+                <router-link to="/dashboard" @click="closeDropdown" class="dropdown-item">
+                  <Icon name="chart" size="sm" />
+                  {{ t('nav.dashboard') }}
+                </router-link>
+
+                <router-link
+                  v-if="!authStore.isSimpleMode"
+                  to="/usage"
+                  @click="closeDropdown"
+                  class="dropdown-item"
+                >
+                  <Icon name="clipboard" size="sm" />
+                  {{ t('nav.usage') }}
+                </router-link>
+
+                <router-link
+                  v-if="!authStore.isSimpleMode && paymentFeatureEnabled"
+                  to="/orders"
+                  @click="closeDropdown"
+                  class="dropdown-item"
+                >
+                  <Icon name="document" size="sm" />
+                  {{ t('nav.myOrders') }}
+                </router-link>
+
+                <router-link
+                  v-if="!authStore.isSimpleMode"
+                  to="/redeem"
+                  @click="closeDropdown"
+                  class="dropdown-item"
+                >
+                  <Icon name="gift" size="sm" />
+                  {{ t('nav.redeem') }}
+                </router-link>
+
+                <router-link
+                  v-if="!authStore.isSimpleMode && affiliateFeatureEnabled"
+                  to="/affiliate"
+                  @click="closeDropdown"
+                  class="dropdown-item"
+                >
+                  <Icon name="users" size="sm" />
+                  {{ t('nav.affiliate') }}
                 </router-link>
 
                 <a
@@ -225,7 +299,7 @@
               <div class="border-t border-gray-100 py-1 dark:border-dark-700">
                 <button
                   @click="handleLogout"
-                  class="dropdown-item w-full text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                  class="dropdown-item avatar-menu-logout w-full"
                 >
                   <svg
                     class="h-4 w-4"
@@ -252,46 +326,71 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import { useAdminSettingsStore } from '@/stores/adminSettings'
-import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
-import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 import { resolveRouteMetaKeys } from '@/router/title'
 import { resolveSiteBillingMode } from '@/utils/siteBillingMode'
+import { toggleThemeWithReveal } from '@/utils/theme-transition'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+const props = withDefaults(defineProps<{ showSidebarToggle?: boolean }>(), {
+  showSidebarToggle: true,
+})
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const adminSettingsStore = useAdminSettingsStore()
 const onboardingStore = useOnboardingStore()
 
+const siteName = computed(() => appStore.siteName || 'SecAPI')
+const siteLogo = computed(() => sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const user = computed(() => authStore.user)
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
+const isDark = ref(document.documentElement.classList.contains('dark'))
+const balanceHidden = ref(false)
 const contactInfo = computed(() => appStore.contactInfo)
 const docUrl = computed(() => sanitizeUrl(appStore.docUrl))
 const modelPlazaEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.modelPlaza))
+const paymentFeatureEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.payment))
+const affiliateFeatureEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.affiliate))
 const avatarUrl = computed(() => user.value?.avatar_url?.trim() || '')
 const availableBalance = computed(() => Number(user.value?.balance || 0))
 const frozenBalance = computed(() => Number(user.value?.frozen_balance || 0))
 const totalBalance = computed(() => availableBalance.value + frozenBalance.value)
+const balanceVisibilityStorageKey = computed(() => user.value ? `sub2api:balance-hidden:${user.value.id}` : '')
 const balanceAvailableText = computed(() => t('common.availableBalance') === 'common.availableBalance' ? '可用余额' : t('common.availableBalance'))
 const balanceFrozenText = computed(() => t('common.frozenBalance') === 'common.frozenBalance' ? '冻结金额' : t('common.frozenBalance'))
 const balanceTotalText = computed(() => t('common.totalBalance') === 'common.totalBalance' ? '总余额' : t('common.totalBalance'))
-const balanceFrozenLabel = computed(() => `${balanceFrozenText.value} ${formatHeaderMoney(frozenBalance.value)}`)
+const balanceFrozenLabel = computed(() => `${balanceFrozenText.value} ${formatBalanceMoney(frozenBalance.value)}`)
+
+watch(
+  balanceVisibilityStorageKey,
+  (key) => {
+    if (!key) {
+      balanceHidden.value = false
+      return
+    }
+    try {
+      balanceHidden.value = localStorage.getItem(key) === 'true'
+    } catch {
+      balanceHidden.value = false
+    }
+  },
+  { immediate: true }
+)
 
 // 只在标准模式的管理员下显示新手引导按钮
 const showOnboardingButton = computed(() => {
-  return !authStore.isSimpleMode && user.value?.role === 'admin'
+  return !authStore.isSimpleMode && !!user.value
 })
 
 const userInitials = computed(() => {
@@ -313,15 +412,14 @@ const displayName = computed(() => {
   return user.value.username || user.value.email?.split('@')[0] || ''
 })
 
-// 订阅功能关闭时不挂载顶栏订阅徽章（组件 onMounted 会拉取订阅接口）。
-const subscriptionFeatureEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.subscription))
-
 // /purchase 的标题/描述随站点计费模式切换，与 document.title 共用同一解析。
 const routeMetaKeys = computed(() => resolveRouteMetaKeys(route, {
   billingMode: resolveSiteBillingMode(appStore.cachedPublicSettings),
 }))
 
 const pageTitle = computed(() => {
+  if (route.name === 'DataDashboard') return ''
+
   // For custom pages, use the menu item's label instead of generic "自定义页面"
   if (route.name === 'CustomPage') {
     const id = route.params.id as string
@@ -347,6 +445,12 @@ const pageDescription = computed(() => {
 
 function toggleMobileSidebar() {
   appStore.toggleMobileSidebar()
+}
+
+function toggleTheme(event: MouseEvent) {
+  toggleThemeWithReveal(event, isDark.value, (nextDark) => {
+    isDark.value = nextDark
+  })
 }
 
 function toggleDropdown() {
@@ -378,6 +482,21 @@ function formatHeaderMoney(value: number) {
   return `$${value.toFixed(2)}`
 }
 
+function formatBalanceMoney(value: number) {
+  return balanceHidden.value ? '$••••' : formatHeaderMoney(value)
+}
+
+function toggleBalanceVisibility() {
+  balanceHidden.value = !balanceHidden.value
+  const key = balanceVisibilityStorageKey.value
+  if (!key) return
+  try {
+    localStorage.setItem(key, String(balanceHidden.value))
+  } catch {
+    // Keep the current page toggle usable if browser storage is unavailable.
+  }
+}
+
 function handleClickOutside(event: MouseEvent) {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
     closeDropdown()
@@ -394,6 +513,30 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.avatar-menu {
+  padding: 6px;
+  border-radius: 18px;
+  @apply border-gray-200/80 bg-white dark:border-white/10 dark:bg-dark-950;
+  box-shadow: 0 12px 36px rgb(0 0 0 / 10%), 0 2px 8px rgb(0 0 0 / 4%);
+}
+.avatar-menu > .border-b,
+.avatar-menu > .border-t {
+  @apply border-gray-100 dark:border-white/[0.06];
+}
+.avatar-menu .dropdown-item {
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  @apply hover:bg-gray-100/80 dark:hover:bg-white/[0.06];
+}
+.avatar-menu .dropdown-item:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+.avatar-menu .avatar-menu-logout {
+  @apply text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/[0.08];
+}
+
 .dropdown-enter-active,
 .dropdown-leave-active {
   transition: all 0.2s ease;

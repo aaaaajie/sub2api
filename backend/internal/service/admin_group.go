@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -401,6 +402,9 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if input.RateMultiplier <= 0 {
 		return nil, errors.New("rate_multiplier must be > 0")
 	}
+	if utf8.RuneCountInString(input.SystemPrompt) > MaxGroupSystemPromptRunes {
+		return nil, infraerrors.BadRequest("GROUP_SYSTEM_PROMPT_TOO_LONG", "system_prompt must be 8192 characters or fewer")
+	}
 	i18n, err := normalizeGroupI18n(input.I18n)
 	if err != nil {
 		return nil, err
@@ -579,6 +583,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		Name:                            input.Name,
 		Description:                     input.Description,
 		I18n:                            i18n,
+		SystemPrompt:                    input.SystemPrompt,
 		Platform:                        platform,
 		RateMultiplier:                  input.RateMultiplier,
 		IsExclusive:                     input.IsExclusive,
@@ -790,6 +795,12 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.Description != nil {
 		group.Description = *input.Description
+	}
+	if input.SystemPrompt != nil {
+		if utf8.RuneCountInString(*input.SystemPrompt) > MaxGroupSystemPromptRunes {
+			return nil, infraerrors.BadRequest("GROUP_SYSTEM_PROMPT_TOO_LONG", "system_prompt must be 8192 characters or fewer")
+		}
+		group.SystemPrompt = *input.SystemPrompt
 	}
 	if input.I18n != nil {
 		i18n, err := normalizeGroupI18n(*input.I18n)

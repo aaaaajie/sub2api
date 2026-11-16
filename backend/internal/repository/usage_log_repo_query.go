@@ -63,6 +63,71 @@ func (r *usageLogRepository) ListByAccount(ctx context.Context, accountID int64,
 	return r.listUsageLogsWithPagination(ctx, "WHERE account_id = $1", []any{accountID}, params)
 }
 
+// GetRecentUserUsageHours uses recorded requests, including zero-token requests.
+// Only retained records belonging to the authenticated user are considered.
+func (r *usageLogRepository) GetRecentUserUsageHours(ctx context.Context, userID int64, timezone string) ([]usagestats.TrendDataPoint, error) {
+	const query = `SELECT * FROM (
+ SELECT to_char(date_trunc('hour', created_at AT TIME ZONE $2), 'YYYY-MM-DD HH24:00') AS hour,
+ count(*), coalesce(sum(input_tokens),0), coalesce(sum(output_tokens),0),
+ coalesce(sum(cache_creation_tokens),0), coalesce(sum(cache_read_tokens),0),
+ coalesce(sum(input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens),0),
+ coalesce(sum(total_cost),0), coalesce(sum(actual_cost),0)
+ FROM usage_logs WHERE user_id = $1
+ GROUP BY 1 ORDER BY 1 DESC LIMIT 10
+ ) recent ORDER BY hour ASC`
+	rows, err := r.sql.QueryContext(ctx, query, userID, timezone)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	points := make([]usagestats.TrendDataPoint, 0, 10)
+	for rows.Next() {
+		var p usagestats.TrendDataPoint
+		if err := rows.Scan(&p.Date, &p.Requests, &p.InputTokens, &p.OutputTokens, &p.CacheCreationTokens, &p.CacheReadTokens, &p.TotalTokens, &p.Cost, &p.ActualCost); err != nil {
+			return nil, err
+		}
+		points = append(points, p)
+	}
+	return points, rows.Err()
+}
+
+func (r *usageLogRepository) GetRecentUsageActivityHours(ctx context.Context, limit int) (results []service.RecentUsageActivityHour, err error) {
+	if limit < 1 || limit > 10 {
+		limit = 10
+	}
+	query := `
+		SELECT bucket_start,
+		       (input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens)::bigint
+		FROM usage_dashboard_hourly
+		WHERE input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens > 0
+		ORDER BY bucket_start DESC
+		LIMIT $1
+	`
+	rows, err := r.sql.QueryContext(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = closeErr
+			results = nil
+		}
+	}()
+
+	results = make([]service.RecentUsageActivityHour, 0, limit)
+	for rows.Next() {
+		var point service.RecentUsageActivityHour
+		if err = rows.Scan(&point.BucketStart, &point.TotalTokens); err != nil {
+			return nil, err
+		}
+		results = append(results, point)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
 func (r *usageLogRepository) ListByUserAndTimeRange(ctx context.Context, userID int64, startTime, endTime time.Time) ([]service.UsageLog, *pagination.PaginationResult, error) {
 	query := "SELECT " + usageLogSelectColumns + " FROM usage_logs WHERE user_id = $1 AND created_at >= $2 AND created_at < $3 ORDER BY id DESC LIMIT 10000"
 	logs, err := r.queryUsageLogs(ctx, query, userID, startTime, endTime)

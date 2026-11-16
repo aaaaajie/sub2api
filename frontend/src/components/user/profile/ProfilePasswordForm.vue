@@ -10,11 +10,6 @@
     </div>
     <div :class="props.embedded ? '' : 'px-6 py-6'">
       <form @submit.prevent="handleChangePassword" class="space-y-4">
-        <div v-if="props.embedded">
-          <p class="text-sm font-semibold text-gray-900 dark:text-white">
-            {{ t('profile.changePassword') }}
-          </p>
-        </div>
         <div>
           <label for="old_password" class="input-label">
             {{ t('profile.currentPassword') }}

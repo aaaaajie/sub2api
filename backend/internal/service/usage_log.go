@@ -22,6 +22,11 @@ const (
 	RequestTypeLive         RequestType = 5
 )
 
+type RecentUsageActivityHour struct {
+	BucketStart time.Time
+	TotalTokens int64
+}
+
 func (t RequestType) IsValid() bool {
 	switch t {
 	case RequestTypeUnknown, RequestTypeSync, RequestTypeStream, RequestTypeWSV2, RequestTypeCyberBlocked, RequestTypeLive:

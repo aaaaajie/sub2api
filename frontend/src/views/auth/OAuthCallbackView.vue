@@ -180,7 +180,7 @@ const confirmPassword = ref('')
 const invitationCode = ref('')
 const registrationError = ref('')
 const pendingProvider = ref<'github' | 'google'>('github')
-const redirectTo = ref('/dashboard')
+const redirectTo = ref('/data-dashboard')
 const invalidCallback = ref(false)
 const EMAIL_OAUTH_PENDING_PROVIDER_KEY = 'email_oauth_pending_provider'
 
@@ -240,11 +240,11 @@ function readTokenResponse(params: URLSearchParams): OAuthTokenResponse | null {
 }
 
 function sanitizeRedirectPath(path: string | null | undefined): string {
-  if (!path) return '/dashboard'
-  if (!path.startsWith('/')) return '/dashboard'
-  if (path.startsWith('//')) return '/dashboard'
-  if (path.includes('://')) return '/dashboard'
-  if (path.includes('\n') || path.includes('\r')) return '/dashboard'
+  if (!path) return '/data-dashboard'
+  if (!path.startsWith('/')) return '/data-dashboard'
+  if (path.startsWith('//')) return '/data-dashboard'
+  if (path.includes('://')) return '/data-dashboard'
+  if (path.includes('\n') || path.includes('\r')) return '/data-dashboard'
   return path
 }
 
@@ -278,7 +278,6 @@ async function finalizeTokenResponse(tokenResponse: OAuthTokenResponse, redirect
     window.sessionStorage.removeItem(EMAIL_OAUTH_PENDING_PROVIDER_KEY)
   }
   clearAllAffiliateReferralCodes()
-  appStore.showSuccess(t('auth.loginSuccess'))
   await router.replace(sanitizeRedirectPath(redirect))
 }
 
@@ -290,7 +289,7 @@ async function resumePendingEmailOAuth() {
   isProcessing.value = true
   try {
     const completion = await exchangePendingOAuthCompletion() as EmailOAuthPendingCompletion
-    const completionRedirect = completion.redirect || '/dashboard'
+    const completionRedirect = completion.redirect || '/data-dashboard'
     if (hasOAuthTokenResponse(completion)) {
       await finalizeTokenResponse(completion, completionRedirect)
       return
@@ -388,7 +387,7 @@ onMounted(async () => {
 
   isProcessing.value = true
   try {
-    await finalizeTokenResponse(tokenResponse, params.get('redirect') || '/dashboard')
+    await finalizeTokenResponse(tokenResponse, params.get('redirect') || '/data-dashboard')
   } catch (error: unknown) {
     const message = (error as { message?: string })?.message || t('auth.loginFailed')
     appStore.showError(message)
