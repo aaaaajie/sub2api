@@ -392,7 +392,7 @@ func orderCodexModelsManifestByGroupPreference(body []byte, allowlist GroupModel
 		if err := json.Unmarshal(raw, &fields); err != nil {
 			return nil, false, err
 		}
-		priority, err := json.Marshal(100 + len(orderedModels) - index)
+		priority, err := json.Marshal(100 + index)
 		if err != nil {
 			return nil, false, err
 		}

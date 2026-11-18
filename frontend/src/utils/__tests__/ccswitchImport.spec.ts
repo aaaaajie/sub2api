@@ -17,7 +17,7 @@ describe('ccswitchImport utils', () => {
       baseUrl: 'https://api.example.com',
       platform: 'openai',
       clientType: 'codex',
-      providerName: 'Sub2API',
+      providerName: 'SecAPI',
       apiKey: 'sk-test',
       usageScript: 'return true',
       model: 'deepseek-chat'
@@ -34,7 +34,7 @@ describe('ccswitchImport utils', () => {
 
   const baseInput = {
     baseUrl: 'https://api.example.com',
-    providerName: 'Sub2API',
+    providerName: 'SecAPI',
     apiKey: 'sk-test',
     usageScript: 'return true'
   }
@@ -62,6 +62,8 @@ describe('ccswitchImport utils', () => {
     expect(atob(params.get('usageScript') || '')).toBe(baseInput.usageScript)
     const payload = JSON.parse(atob(params.get('config') || '')) as { config: string }
     expect(params.get('configFormat')).toBe('json')
+    expect(payload.config).toContain('name = "SecAPI"')
+    expect(payload.config).toContain('model_catalog_url = "https://api.example.com/backend-api/codex/models"')
     expect(payload.config).toContain(`base_url = "${endpoint}"`)
     expect(payload.config).toContain('model = "deepseek-chat"')
     expect(payload.config.split('[model_providers.')[0]).toContain('web_search = "live"')
@@ -175,7 +177,7 @@ describe('CC Switch usage script', () => {
             : platform === 'openai'
               ? 'codex'
               : 'claude',
-          providerName: 'Sub2API',
+          providerName: 'SecAPI',
           apiKey: 'sk-test',
           usageScript: CC_SWITCH_USAGE_SCRIPT
         })
