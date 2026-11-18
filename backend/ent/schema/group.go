@@ -85,6 +85,7 @@ func (Group) Fields() []ent.Field {
 			Comment("内部幂等恢复标识，不对 API 暴露"),
 
 		// Subscription-related fields (added by migration 003)
+		field.String("display_platform").Optional().Default(""),
 		field.String("platform").
 			MaxLen(50).
 			Default(domain.PlatformAnthropic),

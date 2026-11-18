@@ -983,6 +983,7 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		ID:                              g.ID,
 		Name:                            g.Name,
 		SystemPrompt:                    g.SystemPrompt,
+		DisplayPlatform:                 g.DisplayPlatform,
 		Description:                     derefString(g.Description),
 		I18n:                            g.I18n,
 		Platform:                        g.Platform,

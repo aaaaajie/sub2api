@@ -579,6 +579,7 @@ export interface Group {
   name: string
   description: string | null
   platform: GroupPlatform
+  display_platform?: GroupPlatform | ''
   rate_multiplier: number
   rpm_limit?: number // Group-level RPM cap (0 = unlimited); overrides user-level rpm_limit when set
   max_reasoning_effort?: string // Anthropic/OpenAI reasoning ceiling; empty means unlimited
@@ -629,6 +630,7 @@ export interface Group {
   allow_messages_dispatch?: boolean
   // OpenAI Live 接口开关
   allow_live: boolean
+  default_model?: string
   default_mapped_model?: string
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   require_oauth_only: boolean
@@ -679,6 +681,7 @@ export interface AdminGroup extends Group {
 export interface ModelAllowlist {
   enabled: boolean
   models: string[]
+  default_model?: string
 }
 
 // 固定账号获取 Codex Model Manifest 配置（仅 openai 分组）
@@ -811,6 +814,7 @@ export interface CreateGroupRequest {
   i18n?: GroupI18n
   system_prompt?: string
   platform?: GroupPlatform
+  display_platform?: GroupPlatform | ''
   rate_multiplier?: number
   is_exclusive?: boolean
   subscription_type?: SubscriptionType
@@ -879,6 +883,7 @@ export interface UpdateGroupRequest {
   i18n?: GroupI18n
   system_prompt?: string
   platform?: GroupPlatform
+  display_platform?: GroupPlatform | ''
   rate_multiplier?: number
   is_exclusive?: boolean
   status?: 'active' | 'inactive'

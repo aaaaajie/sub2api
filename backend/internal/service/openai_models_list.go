@@ -328,8 +328,8 @@ func (s *OpenAIGatewayService) FetchPinnedOpenAIModelsList(ctx context.Context, 
 			}
 		}
 	}
-	if group.ModelAllowlistEnabled() {
-		models = selectModelCatalogEntries(byID, group.ModelAllowlist.FilterForListing(modelIDs))
+	if group.ModelAllowlistEnabled() || len(group.ModelAllowlist.Models) > 0 || group.ModelAllowlist.DefaultModel != "" {
+		models = selectModelCatalogEntries(byID, group.ModelAllowlist.OrderForListing(modelIDs))
 	}
 	body, err := json.Marshal(struct {
 		Object string            `json:"object"`
@@ -358,10 +358,10 @@ func selectModelCatalogEntries(byID map[string]json.RawMessage, selected []strin
 	return models
 }
 
-func orderPinnedCodexModelsBySelection(body []byte, allowlist GroupModelAllowlist) ([]byte, error) {
+func orderCodexModelsManifestByGroupPreference(body []byte, allowlist GroupModelAllowlist) ([]byte, bool, error) {
 	envelope, entries, err := modelCatalogEntries(body, "models")
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	byID := make(map[string]json.RawMessage, len(entries))
 	modelIDs := make([]string, 0, len(entries))
@@ -370,16 +370,53 @@ func orderPinnedCodexModelsBySelection(body []byte, allowlist GroupModelAllowlis
 			Slug string `json:"slug"`
 		}
 		if err := json.Unmarshal(raw, &entry); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		byID[entry.Slug] = raw
 		modelIDs = append(modelIDs, entry.Slug)
 	}
-	envelope["models"], err = json.Marshal(selectModelCatalogEntries(byID, allowlist.FilterForListing(modelIDs)))
-	if err != nil {
-		return nil, err
+	orderedIDs := allowlist.OrderForListing(modelIDs)
+	orderedModels := selectModelCatalogEntries(byID, orderedIDs)
+	changed := len(orderedModels) != len(entries)
+	if !changed {
+		for index := range entries {
+			if !bytes.Equal(entries[index], orderedModels[index]) {
+				changed = true
+				break
+			}
+		}
 	}
-	return json.Marshal(envelope)
+
+	for index, raw := range orderedModels {
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &fields); err != nil {
+			return nil, false, err
+		}
+		priority, err := json.Marshal(100 + len(orderedModels) - index)
+		if err != nil {
+			return nil, false, err
+		}
+		if !bytes.Equal(bytes.TrimSpace(fields["priority"]), priority) {
+			fields["priority"] = priority
+			orderedModels[index], err = json.Marshal(fields)
+			if err != nil {
+				return nil, false, err
+			}
+			changed = true
+		}
+	}
+	if !changed {
+		return body, false, nil
+	}
+	envelope["models"], err = json.Marshal(orderedModels)
+	if err != nil {
+		return nil, false, err
+	}
+	orderedBody, err := json.Marshal(envelope)
+	if err != nil {
+		return nil, false, err
+	}
+	return orderedBody, true, nil
 }
 
 func (s *OpenAIGatewayService) fetchScheduledOpenAIModels(ctx context.Context, group *Group, maxSwitches int, fetch func(context.Context, *Account) (*OpenAIModelsResponse, error)) ([]pinnedOpenAIModelsResult, error) {

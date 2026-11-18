@@ -220,10 +220,10 @@
                 <span
                   :class="[
                     'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border',
-                    row.group?.platform ? platformBadgeLightClass(row.group.platform) : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-dark-700 dark:bg-dark-800 dark:text-gray-300'
+                    row.group?.platform ? platformBadgeLightClass(groupDisplayPlatform(row.group)) : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-dark-700 dark:bg-dark-800 dark:text-gray-300'
                   ]"
                 >
-                  <PlatformIcon v-if="row.group?.platform" :platform="row.group.platform" size="md" />
+                  <PlatformIcon v-if="row.group?.platform" :platform="groupDisplayPlatform(row.group) || undefined" size="md" />
                   <Icon v-else name="key" size="sm" />
                 </span>
                 <h2 class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ row.name }}</h2>
@@ -299,7 +299,7 @@
                 <GroupBadge
                   v-if="row.group"
                   :name="row.group.name"
-                  :platform="row.group.platform"
+                  :platform="groupDisplayPlatform(row.group) || undefined"
                   :subscription-type="row.group.subscription_type"
                   :rate-multiplier="row.group.rate_multiplier"
                   :user-rate-multiplier="userGroupRates[row.group.id]"
@@ -1250,6 +1250,7 @@ import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
 import { maskApiKey } from '@/utils/maskApiKey'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
+import { groupDisplayPlatform } from '@/utils/groupPresentation'
 import { platformBadgeLightClass } from '@/utils/platformColors'
 import { KEY_GROUP_PROVIDERS, KEY_GROUP_PROVIDER_ICONS, getKeyGroupProvider, type KeyGroupProvider } from '@/utils/keyGroupProviders'
 import {
@@ -1527,7 +1528,7 @@ const groupOptions = computed(() =>
     peakEnd: group.peak_end,
     peakRateMultiplier: group.peak_rate_multiplier,
     subscriptionType: group.subscription_type,
-    platform: group.platform
+    platform: groupDisplayPlatform(group) as GroupPlatform
   }))
 )
 
@@ -1607,7 +1608,7 @@ const createProvider = ref<KeyGroupProvider>('anthropic')
 const createProviderOptions = computed(() => KEY_GROUP_PROVIDERS.map((value) => ({
   value,
   label: t(`keys.providers.${value}`),
-  count: groups.value.filter((group) => getKeyGroupProvider(group.platform) === value).length
+  count: groups.value.filter((group) => getKeyGroupProvider(groupDisplayPlatform(group) as GroupPlatform) === value).length
 })))
 
 const formGroupOptions = computed(() => showEditModal.value
@@ -2164,7 +2165,7 @@ const loadCcsModels = async (row: ApiKey) => {
     ccsModelOptions.value = models
     ccsModelsUnavailable.value = models.length === 0
     if (!models.length) ccsModelsError.value = t('keys.ccsClientSelect.modelsEmpty')
-    const suggestedModel = row.group?.default_mapped_model?.trim()
+    const suggestedModel = row.group?.default_model?.trim()
     selectedCcsModel.value = suggestedModel && models.includes(suggestedModel) ? suggestedModel : models[0] || ''
   } catch (error) {
     if (request !== ccsModelsRequest || pendingCcsRow.value?.id !== row.id) return

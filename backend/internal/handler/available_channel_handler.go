@@ -52,6 +52,7 @@ func (h *AvailableChannelHandler) featureEnabled(c *gin.Context) bool {
 // 订阅视觉加深），并展示默认倍率与高峰倍率规则；用户专属倍率前端走
 // /groups/rates，和 API 密钥页面保持一致。
 type userAvailableGroup struct {
+	displayPlatform    string
 	ID                 int64   `json:"id"`
 	Name               string  `json:"name"`
 	Platform           string  `json:"platform"`
@@ -252,7 +253,7 @@ func buildPlatformSections(
 			SupportedModels: toUserSupportedModels(ch.SupportedModels, platformSet),
 		})
 	}
-	return sections
+	return presentChannelSections(sections)
 }
 
 // filterUserVisibleGroups 仅保留用户可访问的分组。
@@ -270,6 +271,7 @@ func filterUserVisibleGroups(
 			Name:               g.Name,
 			i18n:               g.I18n,
 			Platform:           g.Platform,
+			displayPlatform:    g.DisplayPlatform,
 			SubscriptionType:   g.SubscriptionType,
 			RateMultiplier:     g.RateMultiplier,
 			PeakRateEnabled:    g.PeakRateEnabled,
@@ -361,4 +363,35 @@ func toUserPricing(p *service.ChannelModelPricing) *userSupportedModelPricing {
 		PerRequestPrice:            p.PerRequestPrice,
 		Intervals:                  intervals,
 	}
+}
+
+// Keep each source section's prices and model visibility intact when applying its display identity.
+func presentChannelSections(sections []userChannelPlatformSection) []userChannelPlatformSection {
+	out := make([]userChannelPlatformSection, 0, len(sections))
+	for _, section := range sections {
+		byDisplay := make(map[string][]userAvailableGroup)
+		for _, g := range section.Groups {
+			platform := section.Platform
+			if g.displayPlatform != "" {
+				platform = g.displayPlatform
+				g.Platform = platform
+			}
+			byDisplay[platform] = append(byDisplay[platform], g)
+		}
+		platforms := make([]string, 0, len(byDisplay))
+		for p := range byDisplay {
+			platforms = append(platforms, p)
+		}
+		sort.Strings(platforms)
+		for _, p := range platforms {
+			models := append([]userSupportedModel(nil), section.SupportedModels...)
+			if p != section.Platform {
+				for i := range models {
+					models[i].Platform = p
+				}
+			}
+			out = append(out, userChannelPlatformSection{Platform: p, Groups: byDisplay[p], SupportedModels: models})
+		}
+	}
+	return out
 }

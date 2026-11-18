@@ -1192,6 +1192,11 @@ func (h *GatewayHandler) Models(c *gin.Context) {
 		writeAllowlistedModelsList(c, platform, apiKey.Group.ModelAllowlist.FilterForListing(source))
 		return
 	}
+	if apiKey != nil && apiKey.Group != nil &&
+		(len(apiKey.Group.ModelAllowlist.Models) > 0 || apiKey.Group.ModelAllowlist.DefaultModel != "") &&
+		len(availableModels) > 0 {
+		availableModels = apiKey.Group.ModelAllowlist.OrderForListing(availableModels)
+	}
 
 	if len(availableModels) > 0 || (platform == service.PlatformOpenAI && availableModels != nil) {
 		writeModelsList(c, platform, availableModels)
@@ -1200,6 +1205,11 @@ func (h *GatewayHandler) Models(c *gin.Context) {
 
 	// Fallback to default models
 	if platform == service.PlatformOpenAI {
+		if apiKey != nil && apiKey.Group != nil &&
+			(len(apiKey.Group.ModelAllowlist.Models) > 0 || apiKey.Group.ModelAllowlist.DefaultModel != "") {
+			writeModelsList(c, platform, apiKey.Group.ModelAllowlist.OrderForListing(openai.DefaultModelIDs()))
+			return
+		}
 		writeModelsListResponse(c, openai.DefaultModels)
 		return
 	}

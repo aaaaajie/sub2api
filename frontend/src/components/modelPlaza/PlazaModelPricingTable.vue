@@ -225,10 +225,10 @@
                 class="whitespace-nowrap leading-5"
               >
                 <span class="mr-1 font-sans text-gray-400 dark:text-dark-500" :title="t('modelPlaza.table.tierHint')">{{ tierLabel(iv) }}</span>
-                {{ official(iv.input_price) }}
+                <OfficialTokenPrice :value="iv.input_price" :schedule="m.official_pricing?.time_pricing" :channel-schedule="m.time_pricing" :period="period" />
               </div>
             </template>
-            <template v-else>{{ official(m.official_pricing?.input_price) }}</template>
+            <template v-else><OfficialTokenPrice :value="m.official_pricing?.input_price" :schedule="m.official_pricing?.time_pricing" :channel-schedule="m.time_pricing" :period="period" /></template>
           </td>
           <td class="px-3 py-2.5 align-middle font-mono text-xs text-gray-500 dark:text-dark-400">
             <template v-if="officialIntervals(m).length">
@@ -238,10 +238,10 @@
                 class="whitespace-nowrap leading-5"
                 :title="t('modelPlaza.table.tierHint')"
               >
-                {{ official(iv.output_price) }}
+                <OfficialTokenPrice :value="iv.output_price" :schedule="m.official_pricing?.time_pricing" :channel-schedule="m.time_pricing" :period="period" />
               </div>
             </template>
-            <template v-else>{{ official(m.official_pricing?.output_price) }}</template>
+            <template v-else><OfficialTokenPrice :value="m.official_pricing?.output_price" :schedule="m.official_pricing?.time_pricing" :channel-schedule="m.time_pricing" :period="period" /></template>
           </td>
           <td class="px-3 py-2.5 align-middle">
             <template v-if="hasTierCachePricing(officialIntervals(m))">
@@ -262,7 +262,7 @@
                     }}<span class="font-sans text-gray-400 dark:text-dark-500">)</span></template
                   >
                   <span class="ml-1 font-sans text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheReadShort') }}</span>
-                  {{ official(iv.cache_read_price) }}
+                  <OfficialTokenPrice :value="iv.cache_read_price" :schedule="m.official_pricing?.time_pricing" :channel-schedule="m.time_pricing" :period="period" />
                 </template>
                 <span v-else class="text-gray-400 dark:text-dark-500">-</span>
               </div>
@@ -284,7 +284,7 @@
               </div>
               <div>
                 <span class="mr-1 font-sans font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.cacheRead') }}</span>
-                {{ official(m.official_pricing.cache_read_price) }}
+                <OfficialTokenPrice :value="m.official_pricing.cache_read_price" :schedule="m.official_pricing?.time_pricing" :channel-schedule="m.time_pricing" :period="period" />
               </div>
             </div>
             <span v-else class="text-gray-400 dark:text-dark-500">-</span>
@@ -318,6 +318,7 @@
 </template>
 
 <script setup lang="ts">
+import OfficialTokenPrice from './OfficialTokenPrice.vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatScaled, resolveIntervalPrices } from '@/utils/pricing'
@@ -372,25 +373,8 @@ const accentStyle = computed(() => ({ '--plaza-accent': platformAccentColor(prop
 
 const PER_MILLION = 1_000_000
 
-/**
- * 展示顺序:
- * 1. token 计费的排在前,按图/按次计费的沉到末尾——它们的官方 token 价与实付的按张/按次价不同量纲,混排无意义;
- * 2. 组内按官方输出价从高到低,无官方价的排最后;
- * 3. 同价按名称降序(新版本号在前,如 gpt-5.6 先于 gpt-5.5)。
- */
-const sortedModels = computed(() => {
-  return [...props.models].sort((a, b) => {
-    const ta = billingMode(a) === BILLING_MODE_TOKEN
-    const tb = billingMode(b) === BILLING_MODE_TOKEN
-    if (ta !== tb) return ta ? -1 : 1
-    const pa = a.official_pricing?.output_price ?? null
-    const pb = b.official_pricing?.output_price ?? null
-    if (pa != null && pb != null && pa !== pb) return pb - pa
-    if (pa != null && pb == null) return -1
-    if (pa == null && pb != null) return 1
-    return b.name.localeCompare(a.name)
-  })
-})
+// 模型广场沿用后端按分组设置生成的模型顺序。
+const sortedModels = computed(() => props.models)
 
 const effectiveRate = computed(() => props.userRateMultiplier ?? props.rateMultiplier)
 const hasCustomRate = computed(

@@ -1,0 +1,1 @@
+ALTER TABLE groups ADD COLUMN display_platform VARCHAR(255) NULL DEFAULT '';

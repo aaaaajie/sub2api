@@ -136,7 +136,7 @@
             >
           </template>
 
-          <template #cell-platform="{ value }">
+          <template #cell-platform="{ value, row }">
             <span
               :class="[
                 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
@@ -163,6 +163,11 @@
             >
               <PlatformIcon :platform="value" size="xs" />
               {{ t("admin.groups.platforms." + value, platformLabel(value)) }}
+            </span>
+            <span v-if="row.display_platform" class="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-dark-400">
+              {{ t('admin.groups.form.displayPlatform') }}:
+              <PlatformIcon :platform="row.display_platform" size="xs" />
+              {{ platformLabel(row.display_platform) }}
             </span>
           </template>
 
@@ -532,6 +537,18 @@
           />
           <p class="input-hint">{{ t("admin.groups.platformHint") }}</p>
         </div>
+        <div>
+          <label class="input-label">{{ t('admin.groups.form.displayPlatform') }}</label>
+          <Select v-model="createForm.display_platform" :options="displayPlatformOptions">
+            <template #option="{ option }">
+              <span class="flex items-center gap-2">
+                <PlatformIcon v-if="option.value" :platform="option.value as GroupPlatform" size="sm" />
+                {{ option.label }}
+              </span>
+            </template>
+          </Select>
+          <p class="input-hint">{{ t('admin.groups.form.displayPlatformHint') }}</p>
+        </div>
         <!-- 从分组复制账号 -->
         <div v-if="!authStore.isSimpleMode && copyAccountsGroupOptions.length > 0">
           <div class="mb-1.5 flex items-center gap-1">
@@ -790,6 +807,16 @@
               </p>
             </div>
             <Toggle v-model="createModelAllowlistState.enabled" />
+          </div>
+          <div class="mb-4">
+            <label class="input-label">{{ t("admin.groups.modelAllowlist.defaultModel") }}</label>
+            <Select
+              v-model="createDefaultModel"
+              :options="createDefaultModelOptions"
+              searchable
+              :placeholder="t('admin.groups.modelAllowlist.defaultModelAuto')"
+            />
+            <p class="input-hint">{{ t("admin.groups.modelAllowlist.defaultModelHint") }}</p>
           </div>
           <div
             v-if="createModelAllowlistState.enabled"
@@ -2194,6 +2221,18 @@
           />
           <p class="input-hint">{{ t("admin.groups.platformNotEditable") }}</p>
         </div>
+        <div>
+          <label class="input-label">{{ t('admin.groups.form.displayPlatform') }}</label>
+          <Select v-model="editForm.display_platform" :options="displayPlatformOptions">
+            <template #option="{ option }">
+              <span class="flex items-center gap-2">
+                <PlatformIcon v-if="option.value" :platform="option.value as GroupPlatform" size="sm" />
+                {{ option.label }}
+              </span>
+            </template>
+          </Select>
+          <p class="input-hint">{{ t('admin.groups.form.displayPlatformHint') }}</p>
+        </div>
         <template v-if="!authStore.isSimpleMode">
         <!-- 从分组复制账号（编辑时） -->
         <div v-if="copyAccountsGroupOptionsForEdit.length > 0">
@@ -2455,6 +2494,16 @@
               </p>
             </div>
             <Toggle v-model="editModelAllowlistState.enabled" />
+          </div>
+          <div class="mb-4">
+            <label class="input-label">{{ t("admin.groups.modelAllowlist.defaultModel") }}</label>
+            <Select
+              v-model="editDefaultModel"
+              :options="editDefaultModelOptions"
+              searchable
+              :placeholder="t('admin.groups.modelAllowlist.defaultModelAuto')"
+            />
+            <p class="input-hint">{{ t("admin.groups.modelAllowlist.defaultModelHint") }}</p>
           </div>
           <div
             v-if="editModelAllowlistState.enabled"
@@ -4674,6 +4723,11 @@ const platformOptions = computed(() =>
   ),
 );
 
+const displayPlatformOptions = computed(() => [
+  { value: '', label: t('admin.groups.form.followActualPlatform') },
+  ...GROUP_PLATFORM_OPTIONS,
+]);
+
 const platformFilterOptions = computed(() => [
   { value: "", label: t("admin.groups.allPlatforms") },
   ...GROUP_PLATFORM_OPTIONS,
@@ -4938,6 +4992,8 @@ const createModelAllowlistState = reactive(createInitialModelAllowlistState());
 const editModelAllowlistState = reactive(createInitialModelAllowlistState());
 const createModelAllowlistLoading = ref(false);
 const editModelAllowlistLoading = ref(false);
+const createDefaultModel = ref("");
+const editDefaultModel = ref("");
 type ReasoningEffortPolicyFieldsExpose = {
   validate: () => boolean;
   resetValidation: () => void;
@@ -4964,6 +5020,28 @@ const createModelAllowlistSelectedCount = computed(
 );
 const editModelAllowlistSelectedCount = computed(
   () => editModelAllowlistState.items.filter((item) => item.selected).length,
+);
+const defaultModelOptions = (
+  state: typeof createModelAllowlistState,
+  selectedModel: string,
+) => {
+  const modelIDs = state.items
+    .map((item) => item.id)
+    .filter((id) => id.trim() && !id.includes("*"));
+  const selected = selectedModel.trim();
+  if (selected && !modelIDs.some((id) => id.toLowerCase() === selected.toLowerCase())) {
+    modelIDs.unshift(selected);
+  }
+  return [
+    { value: "", label: t("admin.groups.modelAllowlist.defaultModelAuto") },
+    ...modelIDs.map((id) => ({ value: id, label: id })),
+  ];
+};
+const createDefaultModelOptions = computed(() =>
+  defaultModelOptions(createModelAllowlistState, createDefaultModel.value),
+);
+const editDefaultModelOptions = computed(() =>
+  defaultModelOptions(editModelAllowlistState, editDefaultModel.value),
 );
 const createAllowlistCustomEntry = ref("");
 const editAllowlistCustomEntry = ref("");
@@ -4998,6 +5076,7 @@ const createForm = reactive({
   name: "",
   description: "",
   system_prompt: "",
+  display_platform: "" as GroupPlatform | "",
   i18n: {} as GroupI18n,
   platform: "anthropic" as GroupPlatform,
   rate_multiplier: 1.0,
@@ -5365,6 +5444,7 @@ const editForm = reactive({
   name: "",
   description: "",
   system_prompt: "",
+  display_platform: "" as GroupPlatform | "",
   i18n: {} as GroupI18n,
   platform: "anthropic" as GroupPlatform,
   rate_multiplier: 1.0,
@@ -5843,8 +5923,10 @@ const closeCreateModal = () => {
   createForm.name = "";
   createForm.description = "";
   createForm.system_prompt = "";
+  createForm.display_platform = "";
   createForm.i18n = {};
   createForm.platform = "anthropic";
+  createDefaultModel.value = "";
   createForm.rate_multiplier = 1.0;
   createForm.is_exclusive = false;
   createForm.subscription_type = "standard";
@@ -6018,7 +6100,10 @@ const handleCreateGroup = async () => {
       model_routing: convertRoutingRulesToApiFormat(
         createModelRoutingRules.value,
       ),
-      model_allowlist: buildModelAllowlistConfig(createModelAllowlistState),
+      model_allowlist: {
+        ...buildModelAllowlistConfig(createModelAllowlistState),
+        default_model: createDefaultModel.value.trim(),
+      },
       // 创建时固定账号 manifest 固定发送关闭状态（后端创建路径禁止开启）
       codex_models_manifest_config: createCodexManifestDefaults(),
       supported_model_scopes: normalizeSupportedModelScopesForPlatform(
@@ -6101,6 +6186,7 @@ const handleCreateGroup = async () => {
           name: createForm.name,
           description: createForm.description,
           i18n: createForm.i18n,
+          display_platform: createForm.display_platform,
           platform: createForm.platform,
         }
       : requestData;
@@ -6128,6 +6214,7 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.name = group.name;
   editForm.description = group.description || "";
   editForm.system_prompt = group.system_prompt || "";
+  editForm.display_platform = group.display_platform || "";
   editForm.i18n = Object.fromEntries(
     Object.entries(group.i18n ?? {}).map(([locale, text]) => [
       locale,
@@ -6135,6 +6222,7 @@ const handleEdit = async (group: AdminGroup) => {
     ]),
   );
   editForm.platform = group.platform;
+  editDefaultModel.value = group.model_allowlist?.default_model ?? "";
   editForm.rate_multiplier = group.rate_multiplier;
   editForm.is_exclusive = group.is_exclusive;
   editForm.status = group.status;
@@ -6261,6 +6349,7 @@ const closeEditModal = () => {
   editingGroup.value = null;
   editForm.max_reasoning_effort = "";
   editForm.system_prompt = "";
+  editForm.display_platform = "";
   editForm.max_reasoning_effort_over_limit = reasoningEffortOverLimitDowngrade;
   editForm.reasoning_effort_mappings = [];
   editReasoningEffortPolicyRef.value?.resetValidation();
@@ -6273,6 +6362,7 @@ const closeEditModal = () => {
   editForm.profit_control_enabled = false;
   editForm.profit_min_margin_percent = 0;
   editForm.profit_safety_buffer_percent = 0;
+  editDefaultModel.value = "";
   editForm.video_rate_independent = false;
   editForm.video_rate_multiplier = 1;
   editForm.video_price_480p = null;
@@ -6370,7 +6460,10 @@ const handleUpdateGroup = async () => {
       model_routing: convertRoutingRulesToApiFormat(
         editModelRoutingRules.value,
       ),
-      model_allowlist: buildModelAllowlistConfig(editModelAllowlistState),
+      model_allowlist: {
+        ...buildModelAllowlistConfig(editModelAllowlistState),
+        default_model: editDefaultModel.value.trim(),
+      },
       // 非 openai 平台提交关闭状态，与后端归一化一致
       codex_models_manifest_config:
         editForm.platform === "openai"
@@ -6462,6 +6555,7 @@ const handleUpdateGroup = async () => {
           name: editForm.name,
           description: editForm.description,
           i18n: editForm.i18n,
+          display_platform: editForm.display_platform,
         }
       : payload;
     await adminAPI.groups.update(editingGroup.value.id, requestData);
@@ -6767,6 +6861,7 @@ watch(
 watch(
   () => createForm.platform,
   (newVal) => {
+    createDefaultModel.value = "";
     if (!["anthropic", "antigravity"].includes(newVal)) {
       createForm.fallback_group_id_on_invalid_request = null;
     }
@@ -6825,6 +6920,9 @@ watch(
 watch(
   () => editForm.platform,
   (newVal) => {
+    if (editingGroup.value && newVal !== editingGroup.value.platform) {
+      editDefaultModel.value = "";
+    }
     if (!["anthropic", "antigravity"].includes(newVal)) {
       editForm.fallback_group_id_on_invalid_request = null;
     }

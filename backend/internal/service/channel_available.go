@@ -14,6 +14,7 @@ import (
 // 订阅 vs 标准（SubscriptionType）、默认倍率（RateMultiplier）与高峰倍率规则。
 // 用户专属倍率不在这里暴露，前端自己通过 /groups/rates 拉取，和 API 密钥页面保持一致。
 type AvailableGroupRef struct {
+	DisplayPlatform    string
 	ID                 int64
 	Name               string
 	I18n               GroupI18n
@@ -69,6 +70,7 @@ func (s *ChannelService) ListAvailable(ctx context.Context) ([]AvailableChannel,
 			Name:               g.Name,
 			I18n:               g.I18n,
 			Platform:           g.Platform,
+			DisplayPlatform:    g.DisplayPlatform,
 			SubscriptionType:   g.SubscriptionType,
 			RateMultiplier:     g.RateMultiplier,
 			PeakRateEnabled:    g.PeakRateEnabled,

@@ -14,18 +14,19 @@ import (
 // GroupModelAllowlist 是 service 层的分组模型白名单（与 domain.GroupModelAllowlist
 // 字段一致，ent 持久化用 domain 类型，边界处显式转换）。
 type GroupModelAllowlist struct {
-	Enabled bool     `json:"enabled"`
-	Models  []string `json:"models,omitempty"`
+	Enabled      bool     `json:"enabled"`
+	Models       []string `json:"models,omitempty"`
+	DefaultModel string   `json:"default_model,omitempty"`
 }
 
 // DomainGroupModelAllowlist 把 service 白名单转换为 ent 持久化使用的 domain 类型。
 func DomainGroupModelAllowlist(cfg GroupModelAllowlist) domain.GroupModelAllowlist {
-	return domain.GroupModelAllowlist{Enabled: cfg.Enabled, Models: cfg.Models}
+	return domain.GroupModelAllowlist{Enabled: cfg.Enabled, Models: cfg.Models, DefaultModel: cfg.DefaultModel}
 }
 
 // GroupModelAllowlistFromDomain 把 ent 读出的 domain 白名单转换为 service 类型。
 func GroupModelAllowlistFromDomain(cfg domain.GroupModelAllowlist) GroupModelAllowlist {
-	return GroupModelAllowlist{Enabled: cfg.Enabled, Models: cfg.Models}
+	return GroupModelAllowlist{Enabled: cfg.Enabled, Models: cfg.Models, DefaultModel: cfg.DefaultModel}
 }
 
 // supplementUnmappedOpenAIModels ensures a partial mapping catalog does not
@@ -50,7 +51,7 @@ func supplementUnmappedOpenAIModels(accounts []Account, models []string) []strin
 // 条目 TrimSpace、按小写去重保序；`*` 可出现在任意位置；
 // enabled=true 且列表为空视为配置错误，返回 400 而不是运行时静默放行/拒绝。
 func normalizeGroupModelAllowlist(cfg GroupModelAllowlist) (GroupModelAllowlist, error) {
-	out := GroupModelAllowlist{Enabled: cfg.Enabled}
+	out := GroupModelAllowlist{Enabled: cfg.Enabled, DefaultModel: strings.TrimSpace(cfg.DefaultModel)}
 	if len(cfg.Models) == 0 {
 		if out.Enabled {
 			return out, infraerrors.New(http.StatusBadRequest, "INVALID_MODEL_ALLOWLIST", "model allowlist cannot be enabled with an empty model list")
@@ -77,6 +78,9 @@ func normalizeGroupModelAllowlist(cfg GroupModelAllowlist) (GroupModelAllowlist,
 			return out, infraerrors.New(http.StatusBadRequest, "INVALID_MODEL_ALLOWLIST", "model allowlist cannot be enabled with an empty model list")
 		}
 		out.Models = nil
+	}
+	if out.Enabled && out.DefaultModel != "" && !out.Allows(out.DefaultModel) {
+		return out, infraerrors.New(http.StatusBadRequest, "DEFAULT_MODEL_NOT_ALLOWLISTED", "default model must be included in the enabled model allowlist")
 	}
 	return out, nil
 }
@@ -220,6 +224,69 @@ func (a GroupModelAllowlist) FilterForListing(source []string) []string {
 		}
 	}
 	return filtered
+}
+
+// OrderForListing applies the saved model order when the allowlist is disabled,
+// and filters plus orders the catalog when it is enabled. This lets a group
+// keep its preferred picker order without changing model access rules.
+func (a GroupModelAllowlist) OrderForListing(source []string) []string {
+	if a.Enabled {
+		return a.moveDefaultModelToFront(a.FilterForListing(source))
+	}
+	if len(a.Models) == 0 && strings.TrimSpace(a.DefaultModel) == "" {
+		return source
+	}
+	return a.OrderForDisplay(source)
+}
+
+// OrderForDisplay applies the group's preferred model order without filtering.
+// The model plaza uses this so the allowlist remains an access-control setting,
+// while every available model stays visible.
+func (a GroupModelAllowlist) OrderForDisplay(source []string) []string {
+	ordered := make([]string, 0, len(source))
+	seen := make(map[string]struct{}, len(source))
+	add := func(model string) {
+		key := strings.ToLower(strings.TrimSpace(model))
+		if key == "" {
+			return
+		}
+		if _, exists := seen[key]; exists {
+			return
+		}
+		seen[key] = struct{}{}
+		ordered = append(ordered, model)
+	}
+	for _, preferred := range a.Models {
+		preferred = strings.TrimSpace(preferred)
+		if preferred == "" {
+			continue
+		}
+		for _, model := range source {
+			if groupAllowlistPatternMatches(preferred, strings.TrimSpace(model)) {
+				add(model)
+			}
+		}
+	}
+	for _, model := range source {
+		add(model)
+	}
+	return a.moveDefaultModelToFront(ordered)
+}
+
+func (a GroupModelAllowlist) moveDefaultModelToFront(ordered []string) []string {
+	defaultModel := strings.ToLower(strings.TrimSpace(a.DefaultModel))
+	if defaultModel != "" {
+		for i, model := range ordered {
+			if strings.ToLower(strings.TrimSpace(model)) == defaultModel {
+				if i > 0 {
+					copy(ordered[1:i+1], ordered[0:i])
+					ordered[0] = model
+				}
+				break
+			}
+		}
+	}
+	return ordered
 }
 
 // allowlistSourcePatternAllowsModel 沿用 filterModelsByCustomList 时代的匹配规则：

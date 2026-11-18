@@ -224,6 +224,20 @@ func (_c *GroupCreate) SetNillableDuplicateOperationID(v *string) *GroupCreate {
 	return _c
 }
 
+// SetDisplayPlatform sets the "display_platform" field.
+func (_c *GroupCreate) SetDisplayPlatform(v string) *GroupCreate {
+	_c.mutation.SetDisplayPlatform(v)
+	return _c
+}
+
+// SetNillableDisplayPlatform sets the "display_platform" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableDisplayPlatform(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetDisplayPlatform(*v)
+	}
+	return _c
+}
+
 // SetPlatform sets the "platform" field.
 func (_c *GroupCreate) SetPlatform(v string) *GroupCreate {
 	_c.mutation.SetPlatform(v)
@@ -1117,6 +1131,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.DisplayPlatform(); !ok {
+		v := group.DefaultDisplayPlatform
+		_c.mutation.SetDisplayPlatform(v)
+	}
 	if _, ok := _c.mutation.Platform(); !ok {
 		v := group.DefaultPlatform
 		_c.mutation.SetPlatform(v)
@@ -1559,6 +1577,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DuplicateOperationID(); ok {
 		_spec.SetField(group.FieldDuplicateOperationID, field.TypeString, value)
 		_node.DuplicateOperationID = &value
+	}
+	if value, ok := _c.mutation.DisplayPlatform(); ok {
+		_spec.SetField(group.FieldDisplayPlatform, field.TypeString, value)
+		_node.DisplayPlatform = value
 	}
 	if value, ok := _c.mutation.Platform(); ok {
 		_spec.SetField(group.FieldPlatform, field.TypeString, value)
@@ -2109,6 +2131,24 @@ func (u *GroupUpsert) SetStatus(v string) *GroupUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateStatus() *GroupUpsert {
 	u.SetExcluded(group.FieldStatus)
+	return u
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (u *GroupUpsert) SetDisplayPlatform(v string) *GroupUpsert {
+	u.Set(group.FieldDisplayPlatform, v)
+	return u
+}
+
+// UpdateDisplayPlatform sets the "display_platform" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateDisplayPlatform() *GroupUpsert {
+	u.SetExcluded(group.FieldDisplayPlatform)
+	return u
+}
+
+// ClearDisplayPlatform clears the value of the "display_platform" field.
+func (u *GroupUpsert) ClearDisplayPlatform() *GroupUpsert {
+	u.SetNull(group.FieldDisplayPlatform)
 	return u
 }
 
@@ -3279,6 +3319,27 @@ func (u *GroupUpsertOne) SetStatus(v string) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateStatus() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (u *GroupUpsertOne) SetDisplayPlatform(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDisplayPlatform(v)
+	})
+}
+
+// UpdateDisplayPlatform sets the "display_platform" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateDisplayPlatform() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDisplayPlatform()
+	})
+}
+
+// ClearDisplayPlatform clears the value of the "display_platform" field.
+func (u *GroupUpsertOne) ClearDisplayPlatform() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDisplayPlatform()
 	})
 }
 
@@ -4767,6 +4828,27 @@ func (u *GroupUpsertBulk) SetStatus(v string) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateStatus() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (u *GroupUpsertBulk) SetDisplayPlatform(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDisplayPlatform(v)
+	})
+}
+
+// UpdateDisplayPlatform sets the "display_platform" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateDisplayPlatform() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDisplayPlatform()
+	})
+}
+
+// ClearDisplayPlatform clears the value of the "display_platform" field.
+func (u *GroupUpsertBulk) ClearDisplayPlatform() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDisplayPlatform()
 	})
 }
 

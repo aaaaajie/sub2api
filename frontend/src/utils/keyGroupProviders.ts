@@ -4,7 +4,7 @@ export type KeyGroupProvider = 'anthropic' | 'openai' | 'domestic' | 'other'
 
 export const KEY_GROUP_PROVIDERS = ['anthropic', 'openai', 'domestic', 'other'] as const
 
-// Classify by the configured upstream platform, never by a group's display name.
+// Classify the supplied platform identity, never infer it from a group name.
 const PROVIDER_BY_PLATFORM: Record<GroupPlatform, KeyGroupProvider> = {
   anthropic: 'anthropic',
   openai: 'openai',

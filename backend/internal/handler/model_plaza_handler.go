@@ -45,7 +45,8 @@ type modelPlazaOfficialPricing struct {
 	CacheWrite12hPrice *float64 `json:"cache_write_12h_price,omitempty"`
 	CacheReadPrice     *float64 `json:"cache_read_price"`
 	// Intervals 官方长上下文阶梯，仅多档模型给出。
-	Intervals []userPricingIntervalDTO `json:"intervals,omitempty"`
+	Intervals   []userPricingIntervalDTO `json:"intervals,omitempty"`
+	TimePricing *modelPlazaTimePricing   `json:"time_pricing,omitempty"`
 }
 
 // modelPlazaTimePricingPeriod 分时倍率时段（配置时区当天 [start, end)）。
@@ -199,12 +200,20 @@ func toLocalizedModelPlazaGroups(visible []service.PlazaGroup, userRates map[int
 
 // toModelPlazaGroupDTO 将 service 层广场分组映射为白名单 DTO,并合并用户专属倍率。
 func toModelPlazaGroupDTO(g *service.PlazaGroup, userRates map[int64]float64) modelPlazaGroup {
+	platform := g.Platform
+	if g.DisplayPlatform != "" {
+		platform = g.DisplayPlatform
+	}
 	models := make([]modelPlazaModel, 0, len(g.Models))
 	for i := range g.Models {
 		m := &g.Models[i]
+		modelPlatform := m.Platform
+		if g.DisplayPlatform != "" {
+			modelPlatform = g.DisplayPlatform
+		}
 		models = append(models, modelPlazaModel{
 			Name:             m.Name,
-			Platform:         m.Platform,
+			Platform:         modelPlatform,
 			Pricing:          toUserPricing(m.Pricing),
 			OfficialPricing:  toModelPlazaOfficialPricing(m.OfficialPricing),
 			LongContextBasis: string(m.LongContextBasis),
@@ -215,7 +224,7 @@ func toModelPlazaGroupDTO(g *service.PlazaGroup, userRates map[int64]float64) mo
 		ID:                        g.ID,
 		Name:                      g.Name,
 		Description:               g.Description,
-		Platform:                  g.Platform,
+		Platform:                  platform,
 		SubscriptionType:          g.SubscriptionType,
 		RateMultiplier:            g.RateMultiplier,
 		PeakRateEnabled:           g.PeakRateEnabled,
@@ -265,5 +274,6 @@ func toModelPlazaOfficialPricing(p *service.PlazaOfficialPricing) *modelPlazaOff
 		CacheWrite12hPrice: p.CacheWrite12hPrice,
 		CacheReadPrice:     p.CacheReadPrice,
 		Intervals:          toUserPricingIntervals(p.Intervals),
+		TimePricing:        toModelPlazaTimePricing(p.TimePricing),
 	}
 }

@@ -136,11 +136,12 @@ func (h *GroupHandler) rejectUnsupportedSimpleModeOperation(c *gin.Context, oper
 }
 
 type simpleModeGroupResponse struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Platform    string `json:"platform"`
-	Status      string `json:"status"`
+	ID              int64  `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	Platform        string `json:"platform"`
+	DisplayPlatform string `json:"display_platform"`
+	Status          string `json:"status"`
 
 	I18n service.GroupI18n `json:"i18n,omitempty"`
 
@@ -157,7 +158,7 @@ func groupForSimpleMode(group *service.Group) *simpleModeGroupResponse {
 		return nil
 	}
 	return &simpleModeGroupResponse{
-		ID: group.ID, Name: group.Name, Description: group.Description, Platform: group.Platform,
+		ID: group.ID, Name: group.Name, Description: group.Description, Platform: group.Platform, DisplayPlatform: group.DisplayPlatform,
 		Status:             group.Status,
 		I18n:               group.I18n,
 		AccountCount:       group.AccountCount,
@@ -170,7 +171,7 @@ func sanitizeCreateGroupRequestForSimpleMode(req *CreateGroupRequest) {
 	if req == nil {
 		return
 	}
-	allowed := CreateGroupRequest{Name: req.Name, Description: req.Description, I18n: req.I18n, Platform: req.Platform}
+	allowed := CreateGroupRequest{Name: req.Name, Description: req.Description, I18n: req.I18n, Platform: req.Platform, DisplayPlatform: req.DisplayPlatform}
 	allowed.RateMultiplier = 1
 	allowed.SubscriptionType = service.SubscriptionTypeStandard
 	*req = allowed
@@ -180,7 +181,7 @@ func sanitizeUpdateGroupRequestForSimpleMode(req *UpdateGroupRequest) {
 	if req == nil {
 		return
 	}
-	*req = UpdateGroupRequest{Name: req.Name, Description: req.Description, I18n: req.I18n}
+	*req = UpdateGroupRequest{Name: req.Name, Description: req.Description, I18n: req.I18n, DisplayPlatform: req.DisplayPlatform}
 }
 
 // CreateGroupRequest represents create group request
@@ -189,6 +190,7 @@ type CreateGroupRequest struct {
 	Description               string                        `json:"description"`
 	I18n                      service.GroupI18n             `json:"i18n"` // 名称与描述的界面语言译文
 	SystemPrompt              string                        `json:"system_prompt"`
+	DisplayPlatform           string                        `json:"display_platform"`
 	Platform                  string                        `json:"platform" binding:"omitempty,group_platform"`
 	RateMultiplier            float64                       `json:"rate_multiplier"`
 	IsExclusive               bool                          `json:"is_exclusive"`
@@ -266,6 +268,7 @@ type UpdateGroupRequest struct {
 	Description               *string                        `json:"description"`
 	I18n                      *service.GroupI18n             `json:"i18n"` // 缺省不修改，传入则整体替换
 	SystemPrompt              *string                        `json:"system_prompt"`
+	DisplayPlatform           *string                        `json:"display_platform"`
 	Platform                  string                         `json:"platform" binding:"omitempty,group_platform"`
 	RateMultiplier            *float64                       `json:"rate_multiplier"`
 	IsExclusive               *bool                          `json:"is_exclusive"`
@@ -675,6 +678,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		Description:                     req.Description,
 		I18n:                            req.I18n,
 		SystemPrompt:                    req.SystemPrompt,
+		DisplayPlatform:                 req.DisplayPlatform,
 		Platform:                        req.Platform,
 		RateMultiplier:                  req.RateMultiplier,
 		IsExclusive:                     req.IsExclusive,
@@ -823,6 +827,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		Description:                     req.Description,
 		I18n:                            req.I18n,
 		SystemPrompt:                    req.SystemPrompt,
+		DisplayPlatform:                 req.DisplayPlatform,
 		Platform:                        req.Platform,
 		RateMultiplier:                  req.RateMultiplier,
 		IsExclusive:                     req.IsExclusive,
