@@ -227,13 +227,13 @@ func (a GroupModelAllowlist) FilterForListing(source []string) []string {
 }
 
 // OrderForListing applies the saved model order when the allowlist is disabled,
-// and filters plus orders the catalog when it is enabled. This lets a group
-// keep its preferred picker order without changing model access rules.
+// and filters plus orders the catalog when it is enabled. The selected default
+// model remains a request default and does not override the configured order.
 func (a GroupModelAllowlist) OrderForListing(source []string) []string {
 	if a.Enabled {
-		return a.moveDefaultModelToFront(a.FilterForListing(source))
+		return a.FilterForListing(source)
 	}
-	if len(a.Models) == 0 && strings.TrimSpace(a.DefaultModel) == "" {
+	if len(a.Models) == 0 {
 		return source
 	}
 	return a.OrderForDisplay(source)
@@ -269,22 +269,6 @@ func (a GroupModelAllowlist) OrderForDisplay(source []string) []string {
 	}
 	for _, model := range source {
 		add(model)
-	}
-	return a.moveDefaultModelToFront(ordered)
-}
-
-func (a GroupModelAllowlist) moveDefaultModelToFront(ordered []string) []string {
-	defaultModel := strings.ToLower(strings.TrimSpace(a.DefaultModel))
-	if defaultModel != "" {
-		for i, model := range ordered {
-			if strings.ToLower(strings.TrimSpace(model)) == defaultModel {
-				if i > 0 {
-					copy(ordered[1:i+1], ordered[0:i])
-					ordered[0] = model
-				}
-				break
-			}
-		}
 	}
 	return ordered
 }
