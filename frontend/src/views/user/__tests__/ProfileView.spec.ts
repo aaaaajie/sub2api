@@ -73,27 +73,56 @@ describe('ProfileView', () => {
     })
   })
 
-  it('renders the simplified single-column profile shell without separate stat cards', async () => {
-    const wrapper = mount(ProfileView, {
-      global: {
-        stubs: {
-          AppLayout: { template: '<div><slot /></div>' },
-          StatCard: { template: '<div class="stat-card" />' },
-          ProfileInfoCard: { template: '<div data-testid="profile-info-card" />' },
-          ProfileBalanceNotifyCard: { template: '<div data-testid="profile-balance-notify-card" />' },
-          ProfilePasswordForm: { template: '<div data-testid="profile-password-form" />' },
-          ProfileTotpCard: { template: '<div data-testid="profile-totp-card" />' },
-          Icon: true
-        }
-      }
+  function renderPage() {
+    return mount(ProfileView, {
+      global: { stubs: {
+        AppLayout: { template: '<div><slot /></div>' },
+        ProfileInfoCard: { template: '<div data-testid="summary" />' },
+        ProfileIdentityBindingsSection: { template: '<div data-testid="bindings" />' },
+        ProfileBalanceNotifyCard: { template: '<div data-testid="notifications" />' },
+        ProfilePasswordForm: { template: '<input data-testid="password-draft" />' },
+        ProfileTotpCard: { template: '<div data-testid="totp" />' },
+        ProfilePasskeyCard: { template: '<div data-testid="passkey" />' }
+      } }
     })
+  }
 
+  it('opens security settings first and preserves drafts between sections', async () => {
+    const wrapper = renderPage()
     await flushPromises()
+    expect(wrapper.find('[data-testid="summary"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="totp"]').isVisible()).toBe(true)
+    const safetyInstance = wrapper.get('[data-testid="totp"]').element
+    await wrapper.get('[aria-controls="profile-password-editor"]').trigger('click')
+    await wrapper.get('[data-testid="password-draft"]').setValue('unsaved draft')
+    await wrapper.get('#profile-tab-notifications').trigger('click')
+    await wrapper.get('#profile-tab-security').trigger('click')
+    expect(wrapper.get('[data-testid="totp"]').element).toBe(safetyInstance)
+    expect((wrapper.get('[data-testid="password-draft"]').element as HTMLInputElement).value).toBe('unsaved draft')
+    wrapper.unmount()
+  })
 
-    expect(wrapper.findAll('.stat-card')).toHaveLength(0)
-    expect(wrapper.get('[data-testid="profile-shell"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="profile-shell"]').html()).toContain('profile-info-card')
-    expect(wrapper.get('[data-testid="profile-shell"]').html()).toContain('profile-password-form')
-    expect(wrapper.get('[data-testid="profile-shell"]').html()).toContain('profile-totp-card')
+  it('shows disabled notifications explicitly and supports keyboard tab navigation', async () => {
+    const wrapper = renderPage()
+    await flushPromises()
+    await wrapper.get('#profile-tab-security').trigger('keydown', { key: 'End' })
+    expect(wrapper.get('#profile-tab-notifications').attributes('aria-selected')).toBe('true')
+    expect(wrapper.get('#profile-panel-notifications').text()).toContain('profile.settings.notificationsUnavailable')
+    expect(wrapper.find('[data-testid="notifications"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('reports settings failures and retries without pretending features are disabled', async () => {
+    fetchPublicSettingsMock.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = renderPage()
+    await flushPromises()
+    await wrapper.get('#profile-tab-security').trigger('click')
+    expect(wrapper.get('[role="alert"]').text()).toContain('profile.settings.loadError')
+    expect(wrapper.find('[data-testid="passkey"]').exists()).toBe(false)
+    await wrapper.get('[role="alert"] button').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="passkey"]').isVisible()).toBe(true)
+    wrapper.unmount()
   })
 })

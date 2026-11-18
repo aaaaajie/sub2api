@@ -11,7 +11,7 @@
       <!-- Custom Logo or Default Logo -->
       <router-link
         :to="homePath"
-        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow transition-opacity hover:opacity-80"
+        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-sm transition-opacity hover:opacity-80"
         @click="handleMenuItemClick(homePath)"
       >
         <img v-if="settingsLoaded" :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
@@ -149,20 +149,6 @@
 
     <!-- Bottom Section -->
     <div class="mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
-      <!-- Theme Toggle -->
-      <button
-        @click="toggleTheme"
-        class="sidebar-link mb-2 w-full"
-        :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
-        :title="sidebarCollapsed ? (isDark ? t('nav.lightMode') : t('nav.darkMode')) : undefined"
-      >
-        <SunIcon v-if="isDark" class="h-5 w-5 flex-shrink-0 text-amber-500" />
-        <MoonIcon v-else class="h-5 w-5 flex-shrink-0" />
-        <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{
-          isDark ? t('nav.lightMode') : t('nav.darkMode')
-        }}</span>
-      </button>
-
       <!-- Collapse Button -->
       <button
         @click="toggleSidebar"
@@ -197,7 +183,6 @@ import Icon from '@/components/icons/Icon.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
 import { sanitizeUrl } from '@/utils/url'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
-import { resolveSiteBillingMode } from '@/utils/siteBillingMode'
 import { useBatchImageAccess } from '@/composables/useBatchImageAccess'
 
 interface NavItem {
@@ -250,7 +235,6 @@ const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const mobileOpen = computed(() => appStore.mobileOpen)
 const isAdmin = computed(() => authStore.isAdmin)
 const sidebarNavRef = ref<HTMLElement | null>(null)
-const isDark = ref(document.documentElement.classList.contains('dark'))
 
 const homePath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboard'))
 
@@ -347,21 +331,6 @@ const GiftIcon = {
     )
 }
 
-const UserIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
-      [
-        h('path', {
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
-          d: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z'
-        })
-      ]
-    )
-}
-
 const UsersIcon = {
   render: () =>
     h(
@@ -417,31 +386,6 @@ const CreditCardIcon = {
           'stroke-linecap': 'round',
           'stroke-linejoin': 'round',
           d: 'M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z'
-        })
-      ]
-    )
-}
-
-const RechargeSubscriptionIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'currentColor', viewBox: '0 0 1024 1024' },
-      [
-        h('path', {
-          d: 'M512 992C247.3 992 32 776.7 32 512S247.3 32 512 32s480 215.3 480 480c0 84.4-22.2 167.4-64.2 240-8.9 15.3-28.4 20.6-43.7 11.7-15.3-8.8-20.5-28.4-11.7-43.7 36.4-62.9 55.6-134.8 55.6-208 0-229.4-186.6-416-416-416S96 282.6 96 512s186.6 416 416 416c17.7 0 32 14.3 32 32s-14.3 32-32 32z'
-        }),
-        h('path', {
-          d: 'M640 512H384c-17.7 0-32-14.3-32-32s14.3-32 32-32h256c17.7 0 32 14.3 32 32s-14.3 32-32 32zM640 640H384c-17.7 0-32-14.3-32-32s14.3-32 32-32h256c17.7 0 32 14.3 32 32s-14.3 32-32 32z'
-        }),
-        h('path', {
-          d: 'M512 480c-8.2 0-16.4-3.1-22.6-9.4l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l128 128c12.5 12.5 12.5 32.8 0 45.3-6.3 6.3-14.5 9.4-22.7 9.4z'
-        }),
-        h('path', {
-          d: 'M512 480c-8.2 0-16.4-3.1-22.6-9.4-12.5-12.5-12.5-32.8 0-45.3l128-128c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3l-128 128c-6.3 6.3-14.5 9.4-22.7 9.4z'
-        }),
-        h('path', {
-          d: 'M512 736c-17.7 0-32-14.3-32-32V448c0-17.7 14.3-32 32-32s32 14.3 32 32v256c0 17.7-14.3 32-32 32zM896 992H512c-17.7 0-32-14.3-32-32s14.3-32 32-32h306.8l-73.4-73.4c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l128 128c9.2 9.2 11.9 22.9 6.9 34.9S908.9 992 896 992z'
         })
       ]
     )
@@ -535,36 +479,6 @@ const CogIcon = {
     )
 }
 
-const SunIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
-      [
-        h('path', {
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
-          d: 'M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z'
-        })
-      ]
-    )
-}
-
-const MoonIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
-      [
-        h('path', {
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
-          d: 'M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z'
-        })
-      ]
-    )
-}
-
 const ChevronDoubleLeftIcon = {
   render: () =>
     h(
@@ -590,21 +504,6 @@ const OrderIcon = {
           'stroke-linecap': 'round',
           'stroke-linejoin': 'round',
           d: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z'
-        })
-      ]
-    )
-}
-
-const OrderListIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
-      [
-        h('path', {
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
-          d: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z'
         })
       ]
     )
@@ -694,21 +593,8 @@ const ChevronDownIcon = {
 // which handles the opt-in vs opt-out fallback when settings haven't loaded
 // yet. Admin-only flags (not in public settings) stay inline below.
 const flagChannelMonitor = makeSidebarFlag(FeatureFlags.channelMonitor)
-const flagPayment = makeSidebarFlag(FeatureFlags.payment)
 const flagAvailableChannels = makeSidebarFlag(FeatureFlags.availableChannels)
 const flagSubscription = makeSidebarFlag(FeatureFlags.subscription)
-
-// 购买入口文案随站点计费模式切换：仅充值 → 「充值」，仅订阅 → 「订阅」，否则「充值/订阅」。
-const purchaseNavLabel = computed(() => {
-  switch (resolveSiteBillingMode(appStore.cachedPublicSettings)) {
-    case 'recharge_only':
-      return t('nav.recharge')
-    case 'subscription_only':
-      return t('nav.subscribe')
-    default:
-      return t('nav.buySubscription')
-  }
-})
 const flagAffiliate = makeSidebarFlag(FeatureFlags.affiliate)
 const flagRiskControl = makeSidebarFlag(FeatureFlags.riskControl)
 const flagPluginManagement = makeSidebarFlag(FeatureFlags.pluginManagement)
@@ -717,28 +603,17 @@ const flagOpsMonitoring = () => adminSettingsStore.opsMonitoringEnabled
 const flagAdminPayment = () => adminSettingsStore.paymentEnabled
 const flagBatchImageAccess = () => canUseBatchImage.value
 
-// buildSelfNavItems 构造用户自己的导航项（用户端主菜单和管理员的"我的账户"子菜单共享这组声明）。
-// withDashboard=true 时包含仪表盘（用户端），false 时不含（管理员的个人区已经有独立仪表盘入口）。
-//
-// 条目顺序：密钥 → 用量 → 可用渠道 → 渠道状态 → 订阅/支付 → 兑换/资料。
-// 可用渠道紧挨渠道状态之上，让用户"先看自己能用什么、再看对应状态"。
-function buildSelfNavItems(withDashboard: boolean): NavItem[] {
+// 用户主入口由底部导航和头像菜单承载；此处保留低频工具入口。
+// 管理员的"我的账户"仍保留 API 密钥快捷入口。
+function buildSelfNavItems(includeApiKeys: boolean): NavItem[] {
   const items: NavItem[] = []
-  if (withDashboard) {
-    items.push({ path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon })
+  if (includeApiKeys) {
+    items.push({ path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon })
   }
   items.push(
-    { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/batch-image', label: t('nav.batchImage'), icon: BatchImageIcon, hideInSimpleMode: true, featureFlag: flagBatchImageAccess },
-    { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
-    { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true, featureFlag: flagSubscription },
-    { path: '/purchase', label: purchaseNavLabel.value, icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
-    { path: '/orders', label: t('nav.myOrders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
-    { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
-    { path: '/affiliate', label: t('nav.affiliate'), icon: UsersIcon, hideInSimpleMode: true, featureFlag: flagAffiliate },
-    { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     { path: '/settings/mcp', label: t('mcp.title'), icon: MCPIcon, featureFlag: flagMCP },
     ...customMenuItemsForUser.value.map((item): NavItem => ({
       path: `/custom/${item.id}`,
@@ -757,12 +632,12 @@ function finalizeNav(items: NavItem[]): NavItem[] {
 }
 
 // User navigation items (for regular users)
-const userNavItems = computed((): NavItem[] => finalizeNav(buildSelfNavItems(true)))
+const userNavItems = computed((): NavItem[] => finalizeNav(buildSelfNavItems(false)))
 
 // Personal navigation items (for admin's "My Account" section, without Dashboard).
 // Admins access 可用渠道 from this section just like regular users — there is no
 // separate admin entry, since the page is purely a user-facing view.
-const personalNavItems = computed((): NavItem[] => finalizeNav(buildSelfNavItems(false)))
+const personalNavItems = computed((): NavItem[] => finalizeNav(buildSelfNavItems(true)))
 
 // Custom menu items filtered by visibility
 const customMenuItemsForUser = computed(() => {
@@ -870,12 +745,6 @@ function toggleSidebar() {
   appStore.toggleSidebar()
 }
 
-function toggleTheme() {
-  isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark', isDark.value)
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
-}
-
 function closeMobile() {
   appStore.setMobileOpen(false)
 }
@@ -937,16 +806,6 @@ function handleGroupClick(item: NavItem) {
     router.push(item.path)
   }
   groupExpandOverrides.value.set(item.path, true)
-}
-
-// Initialize theme
-const savedTheme = localStorage.getItem('theme')
-if (
-  savedTheme === 'dark' ||
-  (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
-) {
-  isDark.value = true
-  document.documentElement.classList.add('dark')
 }
 
 // Fetch admin settings (for feature-gated nav items like Ops).

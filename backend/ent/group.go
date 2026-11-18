@@ -32,6 +32,8 @@ type Group struct {
 	Description *string `json:"description,omitempty"`
 	// 名称与描述的界面语言译文：语言代码 -> {name, description}；缺失的语言沿用 name/description
 	I18n domain.GroupI18n `json:"i18n,omitempty"`
+	// 分组级前置系统提示词，仅管理员可配置
+	SystemPrompt string `json:"system_prompt,omitempty"`
 	// RateMultiplier holds the value of the "rate_multiplier" field.
 	RateMultiplier float64 `json:"rate_multiplier,omitempty"`
 	// 是否启用高峰时段倍率
@@ -48,6 +50,8 @@ type Group struct {
 	Status string `json:"status,omitempty"`
 	// 内部幂等恢复标识，不对 API 暴露
 	DuplicateOperationID *string `json:"duplicate_operation_id,omitempty"`
+	// DisplayPlatform holds the value of the "display_platform" field.
+	DisplayPlatform string `json:"display_platform,omitempty"`
 	// Platform holds the value of the "platform" field.
 	Platform string `json:"platform,omitempty"`
 	// SubscriptionType holds the value of the "subscription_type" field.
@@ -270,7 +274,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldRpmLimit:
 			values[i] = new(sql.NullInt64)
-		case group.FieldName, group.FieldDescription, group.FieldPeakStart, group.FieldPeakEnd, group.FieldStatus, group.FieldDuplicateOperationID, group.FieldPlatform, group.FieldSubscriptionType, group.FieldDefaultMappedModel, group.FieldMaxReasoningEffort, group.FieldMaxReasoningEffortOverLimit:
+		case group.FieldName, group.FieldDescription, group.FieldSystemPrompt, group.FieldPeakStart, group.FieldPeakEnd, group.FieldStatus, group.FieldDuplicateOperationID, group.FieldDisplayPlatform, group.FieldPlatform, group.FieldSubscriptionType, group.FieldDefaultMappedModel, group.FieldMaxReasoningEffort, group.FieldMaxReasoningEffortOverLimit:
 			values[i] = new(sql.NullString)
 		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -335,6 +339,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field i18n: %w", err)
 				}
 			}
+		case group.FieldSystemPrompt:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field system_prompt", values[i])
+			} else if value.Valid {
+				_m.SystemPrompt = value.String
+			}
 		case group.FieldRateMultiplier:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field rate_multiplier", values[i])
@@ -383,6 +393,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DuplicateOperationID = new(string)
 				*_m.DuplicateOperationID = value.String
+			}
+		case group.FieldDisplayPlatform:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field display_platform", values[i])
+			} else if value.Valid {
+				_m.DisplayPlatform = value.String
 			}
 		case group.FieldPlatform:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -838,6 +854,9 @@ func (_m *Group) String() string {
 	builder.WriteString("i18n=")
 	builder.WriteString(fmt.Sprintf("%v", _m.I18n))
 	builder.WriteString(", ")
+	builder.WriteString("system_prompt=")
+	builder.WriteString(_m.SystemPrompt)
+	builder.WriteString(", ")
 	builder.WriteString("rate_multiplier=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RateMultiplier))
 	builder.WriteString(", ")
@@ -863,6 +882,9 @@ func (_m *Group) String() string {
 		builder.WriteString("duplicate_operation_id=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("display_platform=")
+	builder.WriteString(_m.DisplayPlatform)
 	builder.WriteString(", ")
 	builder.WriteString("platform=")
 	builder.WriteString(_m.Platform)

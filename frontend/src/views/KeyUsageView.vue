@@ -10,7 +10,6 @@
           <span class="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">{{ siteName }}</span>
         </router-link>
         <div class="flex items-center gap-3">
-          <LocaleSwitcher />
           <a
             v-if="docUrl"
             :href="docUrl"
@@ -421,11 +420,11 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { FeatureFlags, resolveFeatureFlag } from '@/utils/featureFlags'
-import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { buildGatewayUrl } from '@/api/client'
 import { formatDateLocalInput } from '@/utils/format'
 import { sanitizeUrl } from '@/utils/url'
+import { toggleThemeWithReveal } from '@/utils/theme-transition'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
@@ -442,10 +441,10 @@ const githubUrl = 'https://github.com/Wei-Shaw/sub2api'
 
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
-function toggleTheme() {
-  isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark', isDark.value)
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+function toggleTheme(event: MouseEvent) {
+  toggleThemeWithReveal(event, isDark.value, (nextDark) => {
+    isDark.value = nextDark
+  })
 }
 
 const currentYear = computed(() => new Date().getFullYear())
@@ -529,7 +528,7 @@ function setDailyUsageDays(days: 7 | 30 | 90) {
 
 const CIRCUMFERENCE = 2 * Math.PI * 68
 const RING_GRADIENTS = [
-  { from: '#14b8a6', to: '#5eead4' },
+  { from: 'rgb(var(--color-primary-600))', to: 'rgb(var(--color-primary-400))' },
   { from: '#6366F1', to: '#A5B4FC' },
   { from: '#10B981', to: '#6EE7B7' },
   { from: '#F59E0B', to: '#FCD34D' },
@@ -949,9 +948,13 @@ onUnmounted(() => {
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .input-ring:focus {
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
-  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-500) / 0.2);
+  border-color: rgb(var(--color-primary-600));
   outline: none;
+}
+
+:deep(.dark) .input-ring:focus {
+  border-color: rgb(var(--color-primary-400));
 }
 
 /* Ring animation */

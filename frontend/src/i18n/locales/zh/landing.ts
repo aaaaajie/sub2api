@@ -14,9 +14,95 @@ export default {
     login: '登录',
     getStarted: '立即开始',
     goToDashboard: '进入控制台',
+    publicNavigation: '公开导航',
+    heroEyebrow: '统一 AI 接入 · 使用情况清晰可见',
+    relativeActivity: '近期全站调用',
+    relativeIntensity: '相对强度',
+    relativeTrendAccessible: '近期全站调用趋势，仅显示相对百分比',
+    loginSystem: '登录系统',
+    resources: {
+      eyebrow: '模型资源',
+      title: '三类主力资源，稳定低价',
+      description: 'ChatGPT、DeepSeek 与安全特调模型 SecAI，稳定供给、不掺水，价格实在。',
+      models: {
+        gpt: {
+          type: '通用智能模型',
+          description: '面向写作、代码与复杂任务的通用模型资源。'
+        },
+        ds: {
+          type: '推理与日常使用',
+          description: '适合中文对话、推理与高频日常任务。'
+        },
+        secai: {
+          type: '信息安全特调',
+          description: '面向信息安全场景调优的特调模型资源。'
+        }
+      },
+      footnote: '模型可用范围与实际计费以对应分组展示为准。'
+    },
+    story: {
+      access: {
+        eyebrow: '接入方式',
+        title: '一个入口，连接模型服务',
+        description: '围绕密钥与分组组织模型接入，按当前可用的服务发起 API 调用。',
+        flowLabel: '从 API 密钥到可用模型的接入关系',
+        key: 'API 密钥',
+        keyDescription: '身份与访问入口',
+        group: '分组',
+        groupDescription: '连接对应的模型服务',
+        models: '可用模型',
+        modelsDescription: '由分组配置决定'
+      },
+      management: {
+        eyebrow: '密钥管理',
+        title: '密钥与分组，各自清晰有序',
+        description: '将访问凭证、可用模型与状态管理放在一个地方，按用途保持清晰。',
+        items: {
+          keys: {
+            title: '独立管理 API 密钥',
+            description: '为不同用途创建密钥，随时查看用量并调整状态。'
+          },
+          groups: {
+            title: '按需选择分组',
+            description: '为密钥选择可用分组，使用相应的模型服务与计费规则。'
+          },
+          status: {
+            title: '状态清晰可控',
+            description: '在密钥列表中查看状态，需要时启用或停用。'
+          }
+        }
+      },
+      visibility: {
+        eyebrow: '用量记录',
+        title: '每次调用，都有迹可循',
+        description: '通过趋势和使用记录了解调用情况，不依赖估算数据。',
+        note: '首页曲线展示近期全站调用的相对变化。登录后，可在数据看板与使用记录中查看自己的实际用量。',
+        items: {
+          trend: {
+            label: '趋势',
+            description: '按时间查看 Token 消耗与用量变化'
+          },
+          records: {
+            label: '记录',
+            description: '查看请求、模型与消费明细'
+          },
+          keys: {
+            label: '密钥',
+            description: '区分各 API 密钥的调用用量'
+          }
+        }
+      },
+      closing: {
+        eyebrow: '开始使用',
+        title: '准备好开始接入了吗？',
+        description: '登录后创建 API 密钥，按需选择分组并开始调用。',
+        action: '登录并开始',
+        dashboardAction: '打开数据看板'
+      }
+    },
     // 新增：面向用户的价值主张
-    heroSubtitle: '一个密钥，畅用多个 AI 模型',
-    heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',
+    heroSubtitle: '好模型，不必用得贵。',
+    heroDescription: '好模型，不必用得贵。让多模型接入更简单，调用更稳定。',
     tags: {
       subscriptionToApi: '订阅转 API',
       stickySession: '会话保持',

@@ -16,12 +16,14 @@ type GroupCodexModelsManifestConfig = domain.GroupCodexModelsManifestConfig
 type ReasoningEffortMapping = domain.ReasoningEffortMapping
 
 type Group struct {
-	ID             int64
-	Name           string
-	Description    string
-	I18n           GroupI18n // 名称与描述的界面语言译文；缺失的语言沿用 Name/Description
-	Platform       string
-	RateMultiplier float64
+	ID              int64
+	Name            string
+	Description     string
+	I18n            GroupI18n // 名称与描述的界面语言译文；缺失的语言沿用 Name/Description
+	SystemPrompt    string    // 分组级前置系统提示词，仅在网关请求中注入
+	DisplayPlatform string
+	Platform        string
+	RateMultiplier  float64
 	// 高峰时段倍率：peak_rate_enabled 为 true 且当前时刻处于 [PeakStart, PeakEnd) 时，
 	// token 计费倍率额外乘以 PeakRateMultiplier。详见 PeakMultiplierAt。
 	PeakRateEnabled    bool
@@ -142,6 +144,9 @@ type Group struct {
 	ActiveAccountCount      int64
 	RateLimitedAccountCount int64
 }
+
+// MaxGroupSystemPromptRunes caps the per-group prompt size accepted by admin APIs.
+const MaxGroupSystemPromptRunes = 8192
 
 // IsGroupBindableInSimpleMode is the shared policy for groups that may be
 // surfaced and bound to accounts while running in simple mode.
@@ -477,4 +482,12 @@ func (g *Group) GetSearchPricePer1k() *float64 {
 		return nil
 	}
 	return g.SearchPricePer1k
+}
+
+// PresentationPlatform returns the user-facing identity without changing routing.
+func (g *Group) PresentationPlatform() string {
+	if g.DisplayPlatform != "" {
+		return g.DisplayPlatform
+	}
+	return g.Platform
 }

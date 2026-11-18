@@ -307,7 +307,7 @@ describe('WechatCallbackView', () => {
     expect(setTokenMock).toHaveBeenCalledWith('legacy-access-token')
     expect(localStorage.getItem('refresh_token')).toBe('legacy-refresh-token')
     expect(localStorage.getItem('token_expires_at')).not.toBeNull()
-    expect(showSuccessMock).toHaveBeenCalledWith('Login success')
+    expect(showSuccessMock).not.toHaveBeenCalled()
     expect(replaceMock).toHaveBeenCalledWith('/legacy-dashboard')
   })
 

@@ -1,8 +1,8 @@
 <template>
   <AppLayout>
-    <div class="space-y-4">
+    <div class="orders-page mx-auto max-w-5xl space-y-5">
       <!-- Filters -->
-      <div class="card p-4">
+      <div class="orders-toolbar">
         <div class="flex flex-wrap items-center gap-3">
           <Select v-model="currentFilter" :options="statusFilters" class="w-36" @change="handlePageChange(1)" />
           <div class="flex flex-1 items-center justify-end gap-2">
@@ -14,8 +14,12 @@
         </div>
       </div>
 
-      <!-- Table -->
-      <OrderTable :orders="orders" :loading="loading">
+      <div v-if="loadError" class="orders-error" role="alert">
+        <span>{{ loadError }}</span>
+        <button type="button" class="underline underline-offset-4" @click="fetchOrders">{{ t('common.refresh') }}</button>
+      </div>
+      <!-- Records -->
+      <UserOrderList v-if="!loadError || orders.length" :orders="orders" :loading="loading">
         <template #actions="{ row }">
           <div class="flex items-center gap-2">
             <button v-if="row.status === 'PENDING'" @click="handleCancel(row.id)" class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-yellow-600 hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-yellow-900/20">
@@ -28,10 +32,11 @@
             </button>
           </div>
         </template>
-      </OrderTable>
+      </UserOrderList>
 
       <!-- Pagination -->
       <Pagination
+        class="orders-pagination"
         v-if="pagination.total > 0"
         :page="pagination.page"
         :total="pagination.total"
@@ -93,13 +98,15 @@ import Pagination from '@/components/common/Pagination.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
-import OrderTable from '@/components/payment/OrderTable.vue'
+import UserOrderList from '@/components/payment/UserOrderList.vue'
 
 const { t } = useI18n()
 const router = useRouter()
 const appStore = useAppStore()
 
 const loading = ref(false)
+const loadError = ref('')
+let requestId = 0
 const actionLoading = ref(false)
 const orders = ref<PaymentOrder[]>([])
 const refundEligibleProviders = ref<Set<string>>(new Set())
@@ -118,19 +125,23 @@ const statusFilters = computed(() => [
 ])
 
 async function fetchOrders() {
+  const id = ++requestId
   loading.value = true
+  loadError.value = ''
   try {
     const res = await paymentAPI.getMyOrders({
       page: pagination.page,
       page_size: pagination.page_size,
       status: currentFilter.value || undefined,
     })
+    if (id !== requestId) return
     orders.value = res.data.items || []
     pagination.total = res.data.total || 0
   } catch (err: unknown) {
-    appStore.showError(extractI18nErrorMessage(err, t, 'payment.errors', t('common.error')))
+    if (id !== requestId) return
+    loadError.value = extractI18nErrorMessage(err, t, 'payment.errors', t('common.error'))
   } finally {
-    loading.value = false
+    if (id === requestId) loading.value = false
   }
 }
 
@@ -187,3 +198,11 @@ async function loadRefundEligibility() {
 
 onMounted(() => { fetchOrders(); loadRefundEligibility() })
 </script>
+
+<style scoped>
+.orders-page { padding-bottom: 120px; }
+.orders-toolbar { padding: 4px 0 8px; }
+.orders-toolbar :deep(.btn) { min-height: 38px; border-radius: 12px; font-size: 12px; }
+.orders-error { display: flex; justify-content: space-between; gap: 16px; padding: 18px; border-radius: 14px; font-size: 12px; @apply bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300; }
+.orders-pagination { background: transparent; border: 0; padding-left: 0; padding-right: 0; }
+</style>

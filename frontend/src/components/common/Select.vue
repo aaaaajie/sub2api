@@ -52,7 +52,7 @@
           v-if="isOpen"
           ref="dropdownRef"
           class="select-dropdown-portal"
-          :class="[instanceId]"
+          :class="[instanceId, dropdownClass]"
           :style="dropdownStyle"
           role="listbox"
           tabindex="-1"
@@ -155,6 +155,7 @@ interface Props {
   id?: string
   ariaLabel?: string
   ariaDescribedby?: string
+  dropdownClass?: string
   /** 远程搜索模式：输入不在本地过滤 options，而是防抖后 emit('search', query)，由父组件请求数据更新 options */
   remote?: boolean
   /** 远程搜索模式下的加载态：options 为空时下拉显示 loading 文案 */

@@ -142,6 +142,53 @@ export default {
 
   // Onboarding Tour
   onboarding: {
+    quickStart: {
+      "start": "Get started",
+      "welcome": {
+            "title": "Make your first connection",
+            "description": "Create a key, choose a group, and import it into CC Switch. Close this guide at any time and replay it from your avatar menu."
+      },
+      "keys": {
+            "title": "Open API Keys",
+            "description": "Use API Keys in the bottom navigation to manage your client credentials."
+      },
+      "create": {
+            "title": "Create your first key",
+            "description": "Click Create Key. A name based on its purpose makes it easier to manage."
+      },
+      "name": {
+            "title": "Name your key",
+            "description": "For example, “Daily coding” or “My computer”. This name is only for your reference."
+      },
+      "provider": {
+            "title": "Choose a service type",
+            "description": "Choose the service you want to use to see its available groups."
+      },
+      "group": {
+            "title": "Choose a group",
+            "description": "The group determines available models and billing rates. Select one, then click Next. If none are available, close the guide and contact support."
+      },
+      "submit": {
+            "title": "Create the key",
+            "description": "Check the name and group, then create your key. The guide continues only after creation succeeds."
+      },
+      "import": {
+            "title": "Import into CC Switch",
+            "description": "Click CCS on the key card. Reading the available model catalog does not invoke a model or consume tokens."
+      },
+      "client": {
+            "title": "Choose your client",
+            "description": "Select Codex, Claude Code, or another available client, then click Next. Disabled options are not supported by this group."
+      },
+      "confirm": {
+            "title": "Confirm the import",
+            "description": "Once the models are ready, click Import and open CC Switch. Confirm and activate the provider there. If CC Switch is not installed, close the guide and check the documentation."
+      },
+      "docs": {
+            "title": "Your next stop: documentation",
+            "description": "Use the documentation link above for installation and setup instructions. Remember to activate the imported provider in CC Switch."
+      }
+},
     restartTour: 'Restart Onboarding Tour',
     dontShowAgain: "Don't show again",
     dontShowAgainTitle: 'Permanently close onboarding guide',
@@ -287,6 +334,10 @@ export default {
 
   // Payment System
   payment: {
+    checkout: {
+      badgeBonus: '+{percent}%',
+      badgeDiscount: '{percent}% OFF',
+ title: 'Top up balance', description: 'Choose an amount to add credit to your account', summary: 'Top-up summary', orderHistory: 'Order history' },
     title: 'Recharge / Subscription',
     amountLabel: 'Amount',
     paymentAmount: 'Payment Amount',

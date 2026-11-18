@@ -29,21 +29,21 @@
           v-for="subscription in subscriptions"
           :key="subscription.id"
           class="overflow-hidden rounded-2xl border bg-white dark:bg-dark-800"
-          :class="platformBorderClass(subscription.group?.platform || '')"
+          :class="platformBorderClass(groupDisplayPlatform(subscription.group))"
         >
           <!-- Header -->
           <div
             class="flex items-center justify-between border-b border-gray-100 p-4 dark:border-dark-700"
           >
             <div class="flex items-center gap-3">
-              <div :class="['h-1.5 w-1.5 shrink-0 rounded-full', platformAccentDotClass(subscription.group?.platform || '')]" />
+              <div :class="['h-1.5 w-1.5 shrink-0 rounded-full', platformAccentDotClass(groupDisplayPlatform(subscription.group))]" />
               <div>
                 <div class="flex items-center gap-2">
                   <h3 class="font-semibold text-gray-900 dark:text-white">
                     {{ subscription.group?.name || `Group #${subscription.group_id}` }}
                   </h3>
-                  <span :class="['rounded-md border px-2 py-0.5 text-[11px] font-medium', platformBadgeClass(subscription.group?.platform || '')]">
-                    {{ platformLabel(subscription.group?.platform || '') }}
+                  <span :class="['rounded-md border px-2 py-0.5 text-[11px] font-medium', platformBadgeClass(groupDisplayPlatform(subscription.group))]">
+                    {{ platformLabel(groupDisplayPlatform(subscription.group)) }}
                   </span>
                 </div>
                 <p v-if="subscription.group?.description" class="mt-0.5 text-xs text-gray-500 dark:text-dark-400">
@@ -72,7 +72,7 @@
               </span>
               <button
                 v-if="subscription.status === 'active'"
-                :class="['rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors', platformButtonClass(subscription.group?.platform || '')]"
+                :class="['rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors', platformButtonClass(groupDisplayPlatform(subscription.group))]"
                 @click="router.push({ path: '/purchase', query: { tab: 'subscription', group: String(subscription.group_id) } })"
               >
                 {{ t('payment.renewNow') }}
@@ -248,6 +248,7 @@
 </template>
 
 <script setup lang="ts">
+import { groupDisplayPlatform } from '@/utils/groupPresentation'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'

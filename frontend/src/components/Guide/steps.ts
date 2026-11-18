@@ -246,64 +246,38 @@ export const getAdminSteps = (t: (key: string) => string, isSimpleMode = false):
 /**
  * 普通用户引导流程
  */
-export const getUserSteps = (t: (key: string) => string): DriveStep[] => [
-  {
+export const getUserSteps = (
+  t: (key: string) => string,
+  options: { showImport: boolean; showDocs: boolean }
+): DriveStep[] => {
+  const step = (element: string, key: string, interactive = false): DriveStep => ({
+    element,
     popover: {
-      title: t('onboarding.user.welcome.title'),
-      description: t('onboarding.user.welcome.description'),
-      align: 'center',
-      nextBtnText: t('onboarding.user.welcome.nextBtn'),
-      prevBtnText: t('onboarding.user.welcome.prevBtn')
-    }
-  },
-  {
-    element: '[data-tour="sidebar-my-keys"]',
-    popover: {
-      title: t('onboarding.user.keyManage.title'),
-      description: t('onboarding.user.keyManage.description'),
-      side: 'right',
-      align: 'center',
-      showButtons: ['close']
-    }
-  },
-  {
-    element: '[data-tour="keys-create-btn"]',
-    popover: {
-      title: t('onboarding.user.createKey.title'),
-      description: t('onboarding.user.createKey.description'),
+      title: t(`onboarding.quickStart.${key}.title`),
+      description: t(`onboarding.quickStart.${key}.description`),
       side: 'bottom',
-      align: 'end',
-      showButtons: ['close']
-    }
-  },
-  {
-    element: '[data-tour="key-form-name"]',
-    popover: {
-      title: t('onboarding.user.keyName.title'),
-      description: t('onboarding.user.keyName.description'),
-      side: 'right',
-      align: 'start',
-      showButtons: ['next', 'previous']
-    }
-  },
-  {
-    element: '[data-tour="key-form-group"]',
-    popover: {
-      title: t('onboarding.user.keyGroup.title'),
-      description: t('onboarding.user.keyGroup.description'),
-      side: 'right',
-      align: 'start',
-      showButtons: ['next', 'previous']
-    }
-  },
-  {
-    element: '[data-tour="key-form-submit"]',
-    popover: {
-      title: t('onboarding.user.keySubmit.title'),
-      description: t('onboarding.user.keySubmit.description'),
-      side: 'left',
       align: 'center',
-      showButtons: ['close']
+      showButtons: interactive ? ['close'] : ['next', 'close']
     }
-  }
-]
+  })
+  return [
+    { popover: {
+      title: t('onboarding.quickStart.welcome.title'),
+      description: t('onboarding.quickStart.welcome.description'),
+      nextBtnText: t('onboarding.quickStart.start'),
+      showButtons: ['next', 'close']
+    } },
+    step('[data-tour="user-my-keys"]', 'keys', true),
+    step('[data-tour="keys-create-btn"]', 'create', true),
+    step('[data-tour="key-form-name"]', 'name'),
+    step('[data-tour="key-form-provider"]', 'provider'),
+    step('[data-tour="key-form-group"]', 'group'),
+    step('[data-tour="key-form-submit"]', 'submit', true),
+    ...(options.showImport ? [
+      step('[data-tour="key-import-ccs"]', 'import', true),
+      step('[data-tour="ccs-clients"]', 'client'),
+      step('[data-tour="ccs-confirm"]', 'confirm', true)
+    ] : []),
+    ...(options.showDocs ? [step('[data-tour="header-docs"]', 'docs')] : [])
+  ]
+}

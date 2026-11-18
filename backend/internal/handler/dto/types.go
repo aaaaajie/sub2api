@@ -91,13 +91,14 @@ type APIKey struct {
 }
 
 type Group struct {
-	ID             int64   `json:"id"`
-	Name           string  `json:"name"`
-	Description    string  `json:"description"`
-	Platform       string  `json:"platform"`
-	RateMultiplier float64 `json:"rate_multiplier"`
-	IsExclusive    bool    `json:"is_exclusive"`
-	Status         string  `json:"status"`
+	ID              int64   `json:"id"`
+	Name            string  `json:"name"`
+	Description     string  `json:"description"`
+	Platform        string  `json:"platform"`
+	DisplayPlatform string  `json:"display_platform"`
+	RateMultiplier  float64 `json:"rate_multiplier"`
+	IsExclusive     bool    `json:"is_exclusive"`
+	Status          string  `json:"status"`
 
 	// I18n 名称与描述的各语言译文。只有管理端输出；用户侧接口经 Localized 把
 	// name/description 换成请求语言的版本后清空本字段。
@@ -149,6 +150,8 @@ type Group struct {
 	AllowMessagesDispatch bool `json:"allow_messages_dispatch"`
 	// OpenAI Live 接口开关
 	AllowLive bool `json:"allow_live"`
+	// 分组默认模型，用于客户端导入预选和模型列表排序。
+	DefaultModel string `json:"default_model,omitempty"`
 
 	// 账号过滤控制（仅 OpenAI/Antigravity 平台有效）
 	RequireOAuthOnly  bool `json:"require_oauth_only"`
@@ -171,6 +174,8 @@ type Group struct {
 // 注意：普通用户接口不得返回 model_routing/account_count/account_groups 等内部信息。
 type AdminGroup struct {
 	Group
+	// SystemPrompt is only used by the gateway and only visible to administrators.
+	SystemPrompt string `json:"system_prompt"`
 	// ForceOpenAIFast 是管理端请求策略，用户侧分组 DTO 无需暴露。
 	ForceOpenAIFast bool `json:"force_openai_fast"`
 	// FreeOpenAIFast 是管理端计费策略，用户侧分组 DTO 无需暴露。

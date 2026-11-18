@@ -22087,6 +22087,7 @@ type GroupMutation struct {
 	name                                    *string
 	description                             *string
 	i18n                                    *domain.GroupI18n
+	system_prompt                           *string
 	rate_multiplier                         *float64
 	addrate_multiplier                      *float64
 	peak_rate_enabled                       *bool
@@ -22097,6 +22098,7 @@ type GroupMutation struct {
 	is_exclusive                            *bool
 	status                                  *string
 	duplicate_operation_id                  *string
+	display_platform                        *string
 	platform                                *string
 	subscription_type                       *string
 	daily_limit_usd                         *float64
@@ -22543,6 +22545,42 @@ func (m *GroupMutation) ResetI18n() {
 	m.i18n = nil
 }
 
+// SetSystemPrompt sets the "system_prompt" field.
+func (m *GroupMutation) SetSystemPrompt(s string) {
+	m.system_prompt = &s
+}
+
+// SystemPrompt returns the value of the "system_prompt" field in the mutation.
+func (m *GroupMutation) SystemPrompt() (r string, exists bool) {
+	v := m.system_prompt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSystemPrompt returns the old "system_prompt" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldSystemPrompt(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSystemPrompt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSystemPrompt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSystemPrompt: %w", err)
+	}
+	return oldValue.SystemPrompt, nil
+}
+
+// ResetSystemPrompt resets all changes to the "system_prompt" field.
+func (m *GroupMutation) ResetSystemPrompt() {
+	m.system_prompt = nil
+}
+
 // SetRateMultiplier sets the "rate_multiplier" field.
 func (m *GroupMutation) SetRateMultiplier(f float64) {
 	m.rate_multiplier = &f
@@ -22882,6 +22920,55 @@ func (m *GroupMutation) DuplicateOperationIDCleared() bool {
 func (m *GroupMutation) ResetDuplicateOperationID() {
 	m.duplicate_operation_id = nil
 	delete(m.clearedFields, group.FieldDuplicateOperationID)
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (m *GroupMutation) SetDisplayPlatform(s string) {
+	m.display_platform = &s
+}
+
+// DisplayPlatform returns the value of the "display_platform" field in the mutation.
+func (m *GroupMutation) DisplayPlatform() (r string, exists bool) {
+	v := m.display_platform
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayPlatform returns the old "display_platform" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldDisplayPlatform(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayPlatform is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayPlatform requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayPlatform: %w", err)
+	}
+	return oldValue.DisplayPlatform, nil
+}
+
+// ClearDisplayPlatform clears the value of the "display_platform" field.
+func (m *GroupMutation) ClearDisplayPlatform() {
+	m.display_platform = nil
+	m.clearedFields[group.FieldDisplayPlatform] = struct{}{}
+}
+
+// DisplayPlatformCleared returns if the "display_platform" field was cleared in this mutation.
+func (m *GroupMutation) DisplayPlatformCleared() bool {
+	_, ok := m.clearedFields[group.FieldDisplayPlatform]
+	return ok
+}
+
+// ResetDisplayPlatform resets all changes to the "display_platform" field.
+func (m *GroupMutation) ResetDisplayPlatform() {
+	m.display_platform = nil
+	delete(m.clearedFields, group.FieldDisplayPlatform)
 }
 
 // SetPlatform sets the "platform" field.
@@ -25995,7 +26082,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 68)
+	fields := make([]string, 0, 70)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -26013,6 +26100,9 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.i18n != nil {
 		fields = append(fields, group.FieldI18n)
+	}
+	if m.system_prompt != nil {
+		fields = append(fields, group.FieldSystemPrompt)
 	}
 	if m.rate_multiplier != nil {
 		fields = append(fields, group.FieldRateMultiplier)
@@ -26037,6 +26127,9 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.duplicate_operation_id != nil {
 		fields = append(fields, group.FieldDuplicateOperationID)
+	}
+	if m.display_platform != nil {
+		fields = append(fields, group.FieldDisplayPlatform)
 	}
 	if m.platform != nil {
 		fields = append(fields, group.FieldPlatform)
@@ -26220,6 +26313,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case group.FieldI18n:
 		return m.I18n()
+	case group.FieldSystemPrompt:
+		return m.SystemPrompt()
 	case group.FieldRateMultiplier:
 		return m.RateMultiplier()
 	case group.FieldPeakRateEnabled:
@@ -26236,6 +26331,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case group.FieldDuplicateOperationID:
 		return m.DuplicateOperationID()
+	case group.FieldDisplayPlatform:
+		return m.DisplayPlatform()
 	case group.FieldPlatform:
 		return m.Platform()
 	case group.FieldSubscriptionType:
@@ -26365,6 +26462,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldDescription(ctx)
 	case group.FieldI18n:
 		return m.OldI18n(ctx)
+	case group.FieldSystemPrompt:
+		return m.OldSystemPrompt(ctx)
 	case group.FieldRateMultiplier:
 		return m.OldRateMultiplier(ctx)
 	case group.FieldPeakRateEnabled:
@@ -26381,6 +26480,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldStatus(ctx)
 	case group.FieldDuplicateOperationID:
 		return m.OldDuplicateOperationID(ctx)
+	case group.FieldDisplayPlatform:
+		return m.OldDisplayPlatform(ctx)
 	case group.FieldPlatform:
 		return m.OldPlatform(ctx)
 	case group.FieldSubscriptionType:
@@ -26540,6 +26641,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetI18n(v)
 		return nil
+	case group.FieldSystemPrompt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSystemPrompt(v)
+		return nil
 	case group.FieldRateMultiplier:
 		v, ok := value.(float64)
 		if !ok {
@@ -26595,6 +26703,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDuplicateOperationID(v)
+		return nil
+	case group.FieldDisplayPlatform:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayPlatform(v)
 		return nil
 	case group.FieldPlatform:
 		v, ok := value.(string)
@@ -27340,6 +27455,9 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldDuplicateOperationID) {
 		fields = append(fields, group.FieldDuplicateOperationID)
 	}
+	if m.FieldCleared(group.FieldDisplayPlatform) {
+		fields = append(fields, group.FieldDisplayPlatform)
+	}
 	if m.FieldCleared(group.FieldDailyLimitUsd) {
 		fields = append(fields, group.FieldDailyLimitUsd)
 	}
@@ -27419,6 +27537,9 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldDuplicateOperationID:
 		m.ClearDuplicateOperationID()
+		return nil
+	case group.FieldDisplayPlatform:
+		m.ClearDisplayPlatform()
 		return nil
 	case group.FieldDailyLimitUsd:
 		m.ClearDailyLimitUsd()
@@ -27503,6 +27624,9 @@ func (m *GroupMutation) ResetField(name string) error {
 	case group.FieldI18n:
 		m.ResetI18n()
 		return nil
+	case group.FieldSystemPrompt:
+		m.ResetSystemPrompt()
+		return nil
 	case group.FieldRateMultiplier:
 		m.ResetRateMultiplier()
 		return nil
@@ -27526,6 +27650,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldDuplicateOperationID:
 		m.ResetDuplicateOperationID()
+		return nil
+	case group.FieldDisplayPlatform:
+		m.ResetDisplayPlatform()
 		return nil
 	case group.FieldPlatform:
 		m.ResetPlatform()

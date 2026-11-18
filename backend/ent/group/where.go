@@ -80,6 +80,11 @@ func Description(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDescription, v))
 }
 
+// SystemPrompt applies equality check predicate on the "system_prompt" field. It's identical to SystemPromptEQ.
+func SystemPrompt(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSystemPrompt, v))
+}
+
 // RateMultiplier applies equality check predicate on the "rate_multiplier" field. It's identical to RateMultiplierEQ.
 func RateMultiplier(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRateMultiplier, v))
@@ -118,6 +123,11 @@ func Status(v string) predicate.Group {
 // DuplicateOperationID applies equality check predicate on the "duplicate_operation_id" field. It's identical to DuplicateOperationIDEQ.
 func DuplicateOperationID(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDuplicateOperationID, v))
+}
+
+// DisplayPlatform applies equality check predicate on the "display_platform" field. It's identical to DisplayPlatformEQ.
+func DisplayPlatform(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldDisplayPlatform, v))
 }
 
 // Platform applies equality check predicate on the "platform" field. It's identical to PlatformEQ.
@@ -620,6 +630,71 @@ func DescriptionContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldDescription, v))
 }
 
+// SystemPromptEQ applies the EQ predicate on the "system_prompt" field.
+func SystemPromptEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldSystemPrompt, v))
+}
+
+// SystemPromptNEQ applies the NEQ predicate on the "system_prompt" field.
+func SystemPromptNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldSystemPrompt, v))
+}
+
+// SystemPromptIn applies the In predicate on the "system_prompt" field.
+func SystemPromptIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldSystemPrompt, vs...))
+}
+
+// SystemPromptNotIn applies the NotIn predicate on the "system_prompt" field.
+func SystemPromptNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldSystemPrompt, vs...))
+}
+
+// SystemPromptGT applies the GT predicate on the "system_prompt" field.
+func SystemPromptGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldSystemPrompt, v))
+}
+
+// SystemPromptGTE applies the GTE predicate on the "system_prompt" field.
+func SystemPromptGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldSystemPrompt, v))
+}
+
+// SystemPromptLT applies the LT predicate on the "system_prompt" field.
+func SystemPromptLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldSystemPrompt, v))
+}
+
+// SystemPromptLTE applies the LTE predicate on the "system_prompt" field.
+func SystemPromptLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldSystemPrompt, v))
+}
+
+// SystemPromptContains applies the Contains predicate on the "system_prompt" field.
+func SystemPromptContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldSystemPrompt, v))
+}
+
+// SystemPromptHasPrefix applies the HasPrefix predicate on the "system_prompt" field.
+func SystemPromptHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldSystemPrompt, v))
+}
+
+// SystemPromptHasSuffix applies the HasSuffix predicate on the "system_prompt" field.
+func SystemPromptHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldSystemPrompt, v))
+}
+
+// SystemPromptEqualFold applies the EqualFold predicate on the "system_prompt" field.
+func SystemPromptEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldSystemPrompt, v))
+}
+
+// SystemPromptContainsFold applies the ContainsFold predicate on the "system_prompt" field.
+func SystemPromptContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldSystemPrompt, v))
+}
+
 // RateMultiplierEQ applies the EQ predicate on the "rate_multiplier" field.
 func RateMultiplierEQ(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRateMultiplier, v))
@@ -988,6 +1063,81 @@ func DuplicateOperationIDEqualFold(v string) predicate.Group {
 // DuplicateOperationIDContainsFold applies the ContainsFold predicate on the "duplicate_operation_id" field.
 func DuplicateOperationIDContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldDuplicateOperationID, v))
+}
+
+// DisplayPlatformEQ applies the EQ predicate on the "display_platform" field.
+func DisplayPlatformEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformNEQ applies the NEQ predicate on the "display_platform" field.
+func DisplayPlatformNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformIn applies the In predicate on the "display_platform" field.
+func DisplayPlatformIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldDisplayPlatform, vs...))
+}
+
+// DisplayPlatformNotIn applies the NotIn predicate on the "display_platform" field.
+func DisplayPlatformNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldDisplayPlatform, vs...))
+}
+
+// DisplayPlatformGT applies the GT predicate on the "display_platform" field.
+func DisplayPlatformGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformGTE applies the GTE predicate on the "display_platform" field.
+func DisplayPlatformGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformLT applies the LT predicate on the "display_platform" field.
+func DisplayPlatformLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformLTE applies the LTE predicate on the "display_platform" field.
+func DisplayPlatformLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformContains applies the Contains predicate on the "display_platform" field.
+func DisplayPlatformContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformHasPrefix applies the HasPrefix predicate on the "display_platform" field.
+func DisplayPlatformHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformHasSuffix applies the HasSuffix predicate on the "display_platform" field.
+func DisplayPlatformHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformIsNil applies the IsNil predicate on the "display_platform" field.
+func DisplayPlatformIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldDisplayPlatform))
+}
+
+// DisplayPlatformNotNil applies the NotNil predicate on the "display_platform" field.
+func DisplayPlatformNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldDisplayPlatform))
+}
+
+// DisplayPlatformEqualFold applies the EqualFold predicate on the "display_platform" field.
+func DisplayPlatformEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldDisplayPlatform, v))
+}
+
+// DisplayPlatformContainsFold applies the ContainsFold predicate on the "display_platform" field.
+func DisplayPlatformContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldDisplayPlatform, v))
 }
 
 // PlatformEQ applies the EQ predicate on the "platform" field.

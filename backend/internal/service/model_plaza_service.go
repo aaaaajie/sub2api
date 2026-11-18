@@ -17,7 +17,8 @@ type PlazaOfficialPricing struct {
 	CacheWrite12hPrice *float64 // OpenAI 12h cache-write price
 	CacheReadPrice     *float64
 	// Intervals 官方长上下文阶梯（多档时给出），不受分组开关影响。
-	Intervals []PricingInterval
+	Intervals   []PricingInterval
+	TimePricing *TimePricingSchedule
 }
 
 // PlazaModel 模型广场中单个模型条目：按实收口径合成的展示定价 + 官方参考价。
@@ -38,6 +39,7 @@ type PlazaModel struct {
 // 支持模型（普通分组按分组平台隔离，Composite 分组展开关联渠道已配置的
 // 具体平台），与「可用渠道」页口径一致。
 type PlazaGroup struct {
+	DisplayPlatform    string
 	ID                 int64
 	Name               string
 	Description        string
@@ -101,7 +103,7 @@ func NewModelPlazaService(
 //     图片计费模型的档位价按实收口径合成（见 plazaImageDisplayPricing）；
 //   - 每个模型附带官方参考价（查不到为 nil）；
 //   - 只返回 Models 非空的分组；分组按 RateMultiplier 升序（同倍率按名称），
-//     组内模型按名称排序。
+//     组内优先沿用分组保存的模型顺序，未配置顺序时按名称排序。
 //
 // 可见性过滤（专属分组）不在此层做，由 handler 按登录态裁剪。
 func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error) {
@@ -129,6 +131,7 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 			Description:               g.Description,
 			I18n:                      g.I18n,
 			Platform:                  g.Platform,
+			DisplayPlatform:           g.DisplayPlatform,
 			SubscriptionType:          g.SubscriptionType,
 			RateMultiplier:            g.RateMultiplier,
 			PeakRateEnabled:           g.PeakRateEnabled,
@@ -212,6 +215,25 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 			return pg.Models[i].Platform < pg.Models[j].Platform
 		})
 		g := groupEnt[gid]
+		if len(g.ModelAllowlist.Models) > 0 || g.ModelAllowlist.DefaultModel != "" {
+			modelNames := make([]string, 0, len(pg.Models))
+			for i := range pg.Models {
+				modelNames = append(modelNames, pg.Models[i].Name)
+			}
+			orderedNames := g.ModelAllowlist.OrderForDisplay(modelNames)
+			modelOrder := make(map[string]int, len(orderedNames))
+			for i, name := range orderedNames {
+				modelOrder[strings.ToLower(name)] = i
+			}
+			sort.SliceStable(pg.Models, func(i, j int) bool {
+				left := modelOrder[strings.ToLower(pg.Models[i].Name)]
+				right := modelOrder[strings.ToLower(pg.Models[j].Name)]
+				if left != right {
+					return left < right
+				}
+				return pg.Models[i].Platform < pg.Models[j].Platform
+			})
+		}
 		for j := range pg.Models {
 			s.fillDisplayPricing(ctx, &pg.Models[j], g)
 			pg.Models[j].OfficialPricing = s.lookupOfficialPricing(ctx, pg.Models[j].Name, officialMemo)
@@ -364,6 +386,15 @@ func (s *ModelPlazaService) lookupOfficialPricing(ctx context.Context, modelName
 			OutputPrice:     nonZeroPtr(mp.OutputPricePerToken),
 			CacheWritePrice: nonZeroPtr(mp.CacheCreationPricePerToken),
 			CacheReadPrice:  nonZeroPtr(mp.CacheReadPricePerToken),
+		}
+		if isDeepSeekModel(modelName) {
+			result.TimePricing = &TimePricingSchedule{Timezone: "Asia/Shanghai", WeekdaysOnly: true}
+			for _, window := range deepseekPeakHoursUTC() {
+				result.TimePricing.Periods = append(result.TimePricing.Periods, TimePricingPeriod{
+					StartTime: fmt.Sprintf("%02d:00:00", window[0]+8),
+					EndTime:   fmt.Sprintf("%02d:00:00", window[1]+8), Multiplier: 2,
+				})
+			}
 		}
 		// 计费只在支持 5m/1h 分档时使用 1h 价，其余情况 1h 价对用户无意义。
 		if mp.SupportsCacheBreakdown {

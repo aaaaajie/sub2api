@@ -98,6 +98,20 @@ func (_c *GroupCreate) SetI18n(v domain.GroupI18n) *GroupCreate {
 	return _c
 }
 
+// SetSystemPrompt sets the "system_prompt" field.
+func (_c *GroupCreate) SetSystemPrompt(v string) *GroupCreate {
+	_c.mutation.SetSystemPrompt(v)
+	return _c
+}
+
+// SetNillableSystemPrompt sets the "system_prompt" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableSystemPrompt(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetSystemPrompt(*v)
+	}
+	return _c
+}
+
 // SetRateMultiplier sets the "rate_multiplier" field.
 func (_c *GroupCreate) SetRateMultiplier(v float64) *GroupCreate {
 	_c.mutation.SetRateMultiplier(v)
@@ -206,6 +220,20 @@ func (_c *GroupCreate) SetDuplicateOperationID(v string) *GroupCreate {
 func (_c *GroupCreate) SetNillableDuplicateOperationID(v *string) *GroupCreate {
 	if v != nil {
 		_c.SetDuplicateOperationID(*v)
+	}
+	return _c
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (_c *GroupCreate) SetDisplayPlatform(v string) *GroupCreate {
+	_c.mutation.SetDisplayPlatform(v)
+	return _c
+}
+
+// SetNillableDisplayPlatform sets the "display_platform" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableDisplayPlatform(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetDisplayPlatform(*v)
 	}
 	return _c
 }
@@ -1071,6 +1099,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultI18n
 		_c.mutation.SetI18n(v)
 	}
+	if _, ok := _c.mutation.SystemPrompt(); !ok {
+		v := group.DefaultSystemPrompt
+		_c.mutation.SetSystemPrompt(v)
+	}
 	if _, ok := _c.mutation.RateMultiplier(); !ok {
 		v := group.DefaultRateMultiplier
 		_c.mutation.SetRateMultiplier(v)
@@ -1098,6 +1130,10 @@ func (_c *GroupCreate) defaults() error {
 	if _, ok := _c.mutation.Status(); !ok {
 		v := group.DefaultStatus
 		_c.mutation.SetStatus(v)
+	}
+	if _, ok := _c.mutation.DisplayPlatform(); !ok {
+		v := group.DefaultDisplayPlatform
+		_c.mutation.SetDisplayPlatform(v)
 	}
 	if _, ok := _c.mutation.Platform(); !ok {
 		v := group.DefaultPlatform
@@ -1260,6 +1296,9 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.I18n(); !ok {
 		return &ValidationError{Name: "i18n", err: errors.New(`ent: missing required field "Group.i18n"`)}
+	}
+	if _, ok := _c.mutation.SystemPrompt(); !ok {
+		return &ValidationError{Name: "system_prompt", err: errors.New(`ent: missing required field "Group.system_prompt"`)}
 	}
 	if _, ok := _c.mutation.RateMultiplier(); !ok {
 		return &ValidationError{Name: "rate_multiplier", err: errors.New(`ent: missing required field "Group.rate_multiplier"`)}
@@ -1503,6 +1542,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 		_spec.SetField(group.FieldI18n, field.TypeJSON, value)
 		_node.I18n = value
 	}
+	if value, ok := _c.mutation.SystemPrompt(); ok {
+		_spec.SetField(group.FieldSystemPrompt, field.TypeString, value)
+		_node.SystemPrompt = value
+	}
 	if value, ok := _c.mutation.RateMultiplier(); ok {
 		_spec.SetField(group.FieldRateMultiplier, field.TypeFloat64, value)
 		_node.RateMultiplier = value
@@ -1534,6 +1577,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DuplicateOperationID(); ok {
 		_spec.SetField(group.FieldDuplicateOperationID, field.TypeString, value)
 		_node.DuplicateOperationID = &value
+	}
+	if value, ok := _c.mutation.DisplayPlatform(); ok {
+		_spec.SetField(group.FieldDisplayPlatform, field.TypeString, value)
+		_node.DisplayPlatform = value
 	}
 	if value, ok := _c.mutation.Platform(); ok {
 		_spec.SetField(group.FieldPlatform, field.TypeString, value)
@@ -1979,6 +2026,18 @@ func (u *GroupUpsert) UpdateI18n() *GroupUpsert {
 	return u
 }
 
+// SetSystemPrompt sets the "system_prompt" field.
+func (u *GroupUpsert) SetSystemPrompt(v string) *GroupUpsert {
+	u.Set(group.FieldSystemPrompt, v)
+	return u
+}
+
+// UpdateSystemPrompt sets the "system_prompt" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateSystemPrompt() *GroupUpsert {
+	u.SetExcluded(group.FieldSystemPrompt)
+	return u
+}
+
 // SetRateMultiplier sets the "rate_multiplier" field.
 func (u *GroupUpsert) SetRateMultiplier(v float64) *GroupUpsert {
 	u.Set(group.FieldRateMultiplier, v)
@@ -2072,6 +2131,24 @@ func (u *GroupUpsert) SetStatus(v string) *GroupUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *GroupUpsert) UpdateStatus() *GroupUpsert {
 	u.SetExcluded(group.FieldStatus)
+	return u
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (u *GroupUpsert) SetDisplayPlatform(v string) *GroupUpsert {
+	u.Set(group.FieldDisplayPlatform, v)
+	return u
+}
+
+// UpdateDisplayPlatform sets the "display_platform" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateDisplayPlatform() *GroupUpsert {
+	u.SetExcluded(group.FieldDisplayPlatform)
+	return u
+}
+
+// ClearDisplayPlatform clears the value of the "display_platform" field.
+func (u *GroupUpsert) ClearDisplayPlatform() *GroupUpsert {
+	u.SetNull(group.FieldDisplayPlatform)
 	return u
 }
 
@@ -3119,6 +3196,20 @@ func (u *GroupUpsertOne) UpdateI18n() *GroupUpsertOne {
 	})
 }
 
+// SetSystemPrompt sets the "system_prompt" field.
+func (u *GroupUpsertOne) SetSystemPrompt(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSystemPrompt(v)
+	})
+}
+
+// UpdateSystemPrompt sets the "system_prompt" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateSystemPrompt() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSystemPrompt()
+	})
+}
+
 // SetRateMultiplier sets the "rate_multiplier" field.
 func (u *GroupUpsertOne) SetRateMultiplier(v float64) *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
@@ -3228,6 +3319,27 @@ func (u *GroupUpsertOne) SetStatus(v string) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateStatus() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (u *GroupUpsertOne) SetDisplayPlatform(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDisplayPlatform(v)
+	})
+}
+
+// UpdateDisplayPlatform sets the "display_platform" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateDisplayPlatform() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDisplayPlatform()
+	})
+}
+
+// ClearDisplayPlatform clears the value of the "display_platform" field.
+func (u *GroupUpsertOne) ClearDisplayPlatform() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDisplayPlatform()
 	})
 }
 
@@ -4593,6 +4705,20 @@ func (u *GroupUpsertBulk) UpdateI18n() *GroupUpsertBulk {
 	})
 }
 
+// SetSystemPrompt sets the "system_prompt" field.
+func (u *GroupUpsertBulk) SetSystemPrompt(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetSystemPrompt(v)
+	})
+}
+
+// UpdateSystemPrompt sets the "system_prompt" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateSystemPrompt() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateSystemPrompt()
+	})
+}
+
 // SetRateMultiplier sets the "rate_multiplier" field.
 func (u *GroupUpsertBulk) SetRateMultiplier(v float64) *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
@@ -4702,6 +4828,27 @@ func (u *GroupUpsertBulk) SetStatus(v string) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateStatus() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (u *GroupUpsertBulk) SetDisplayPlatform(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDisplayPlatform(v)
+	})
+}
+
+// UpdateDisplayPlatform sets the "display_platform" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateDisplayPlatform() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDisplayPlatform()
+	})
+}
+
+// ClearDisplayPlatform clears the value of the "display_platform" field.
+func (u *GroupUpsertBulk) ClearDisplayPlatform() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDisplayPlatform()
 	})
 }
 

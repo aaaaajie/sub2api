@@ -57,6 +57,8 @@ export default {
     disabled: '已禁用',
 	    total: '总计',
 	    balance: '余额',
+	    hideBalance: '隐藏余额',
+	    showBalance: '显示余额',
 	    availableBalance: '可用余额',
 	    frozenBalance: '冻结金额',
 	    totalBalance: '总余额',
@@ -164,6 +166,9 @@ export default {
   // Navigation
   nav: {
     dashboard: '仪表盘',
+    dataDashboard: '数据看板',
+    myInfo: '我的信息',
+    primaryNavigation: '主导航',
     announcements: '公告',
     apiKeys: 'API 密钥',
     batchImage: '批量生图',
@@ -197,6 +202,7 @@ export default {
     github: 'GitHub',
     mySubscriptions: '我的订阅',
     buySubscription: '充值/订阅',
+    creditRecharge: '额度充值',
     recharge: '充值',
     subscribe: '订阅',
     docs: '文档',

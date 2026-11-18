@@ -79,9 +79,9 @@ function simulateGuard(
       (toPath === '/login' || toPath === '/register')
     ) {
       if (authState.backendModeEnabled && !authState.isAdmin) {
-        return null
+        return '/data-dashboard'
       }
-      return authState.isAdmin ? '/admin/dashboard' : '/dashboard'
+      return '/data-dashboard'
     }
     if (authState.backendModeEnabled && !authState.isAuthenticated) {
       const allowed = ['/login', '/key-usage', '/setup', '/payment/result']
@@ -111,7 +111,7 @@ function simulateGuard(
 
   // 需要管理员但不是管理员
   if (requiresAdmin && !authState.isAdmin) {
-    return '/dashboard'
+    return '/data-dashboard'
   }
 
   // 简易模式限制
@@ -130,6 +130,9 @@ function simulateGuard(
   // Backend mode: admin gets full access, non-admin blocked
   if (authState.backendModeEnabled) {
     if (authState.isAuthenticated && authState.isAdmin) {
+      return null
+    }
+    if (authState.isAuthenticated && toPath === '/data-dashboard') {
       return null
     }
     const allowed = ['/login', '/key-usage', '/setup', '/payment/result']
@@ -201,14 +204,14 @@ describe('路由守卫逻辑', () => {
       hasPendingAuthSession: false,
     }
 
-    it('访问 /login 重定向到 /dashboard', () => {
+    it('访问 /login 重定向到数据看板', () => {
       const redirect = simulateGuard('/login', { requiresAuth: false }, authState)
-      expect(redirect).toBe('/dashboard')
+      expect(redirect).toBe('/data-dashboard')
     })
 
-    it('访问 /register 重定向到 /dashboard', () => {
+    it('访问 /register 重定向到数据看板', () => {
       const redirect = simulateGuard('/register', { requiresAuth: false }, authState)
-      expect(redirect).toBe('/dashboard')
+      expect(redirect).toBe('/data-dashboard')
     })
 
     it('访问 /dashboard 允许通过', () => {
@@ -216,14 +219,14 @@ describe('路由守卫逻辑', () => {
       expect(redirect).toBeNull()
     })
 
-    it('访问管理页面被拒绝，重定向到 /dashboard', () => {
+    it('访问管理页面被拒绝，重定向到数据看板', () => {
       const redirect = simulateGuard('/admin/dashboard', { requiresAdmin: true }, authState)
-      expect(redirect).toBe('/dashboard')
+      expect(redirect).toBe('/data-dashboard')
     })
 
     it('访问 /admin/users 被拒绝', () => {
       const redirect = simulateGuard('/admin/users', { requiresAdmin: true }, authState)
-      expect(redirect).toBe('/dashboard')
+      expect(redirect).toBe('/data-dashboard')
     })
   })
 
@@ -238,9 +241,9 @@ describe('路由守卫逻辑', () => {
       hasPendingAuthSession: false,
     }
 
-    it('访问 /login 重定向到 /admin/dashboard', () => {
+    it('管理员访问 /login 重定向到数据看板', () => {
       const redirect = simulateGuard('/login', { requiresAuth: false }, authState)
-      expect(redirect).toBe('/admin/dashboard')
+      expect(redirect).toBe('/data-dashboard')
     })
 
     it('访问管理页面允许通过', () => {
@@ -421,7 +424,7 @@ describe('路由守卫逻辑', () => {
       expect(redirect).toBeNull()
     })
 
-    it('admin: /login redirects to /admin/dashboard', () => {
+    it('admin: /login redirects to data dashboard', () => {
       const authState: MockAuthState = {
         isAuthenticated: true,
         isAdmin: true,
@@ -430,7 +433,7 @@ describe('路由守卫逻辑', () => {
         hasPendingAuthSession: false,
       }
       const redirect = simulateGuard('/login', { requiresAuth: false }, authState)
-      expect(redirect).toBe('/admin/dashboard')
+      expect(redirect).toBe('/data-dashboard')
     })
 
     it('non-admin authenticated: /dashboard redirects to /login', () => {
@@ -445,7 +448,7 @@ describe('路由守卫逻辑', () => {
       expect(redirect).toBe('/login')
     })
 
-    it('non-admin authenticated: /login is allowed (no redirect loop)', () => {
+    it('non-admin authenticated: /login redirects to the data dashboard', () => {
       const authState: MockAuthState = {
         isAuthenticated: true,
         isAdmin: false,
@@ -454,6 +457,18 @@ describe('路由守卫逻辑', () => {
         hasPendingAuthSession: false,
       }
       const redirect = simulateGuard('/login', { requiresAuth: false }, authState)
+      expect(redirect).toBe('/data-dashboard')
+    })
+
+    it('non-admin authenticated: /data-dashboard is allowed', () => {
+      const authState: MockAuthState = {
+        isAuthenticated: true,
+        isAdmin: false,
+        isSimpleMode: false,
+        backendModeEnabled: true,
+        hasPendingAuthSession: false,
+      }
+      const redirect = simulateGuard('/data-dashboard', {}, authState)
       expect(redirect).toBeNull()
     })
 

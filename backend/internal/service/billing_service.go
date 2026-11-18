@@ -296,6 +296,10 @@ func isDeepSeekModel(model string) bool {
 	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(model)), "deepseek-")
 }
 
+func deepseekPeakHoursUTC() [2][2]int {
+	return [2][2]int{{1, 4}, {6, 10}}
+}
+
 // deepseekPeakMultiplierAt 返回指定时刻的 DeepSeek 官方峰谷定价因子。
 // 官方口径（2026-08-23 起生效）：高峰价 = 2× 低谷价；高峰时段为
 // 01:00–04:00 与 06:00–10:00 UTC（半开区间），仅工作日；
@@ -306,9 +310,10 @@ func deepseekPeakMultiplierAt(now time.Time) float64 {
 	case time.Saturday, time.Sunday:
 		return 1.0
 	}
-	switch h := now.UTC().Hour(); {
-	case h >= 1 && h < 4, h >= 6 && h < 10:
-		return 2.0
+	for _, window := range deepseekPeakHoursUTC() {
+		if h := now.UTC().Hour(); h >= window[0] && h < window[1] {
+			return 2.0
+		}
 	}
 	return 1.0
 }

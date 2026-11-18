@@ -103,6 +103,20 @@ func (_u *GroupUpdate) SetI18n(v domain.GroupI18n) *GroupUpdate {
 	return _u
 }
 
+// SetSystemPrompt sets the "system_prompt" field.
+func (_u *GroupUpdate) SetSystemPrompt(v string) *GroupUpdate {
+	_u.mutation.SetSystemPrompt(v)
+	return _u
+}
+
+// SetNillableSystemPrompt sets the "system_prompt" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableSystemPrompt(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetSystemPrompt(*v)
+	}
+	return _u
+}
+
 // SetRateMultiplier sets the "rate_multiplier" field.
 func (_u *GroupUpdate) SetRateMultiplier(v float64) *GroupUpdate {
 	_u.mutation.ResetRateMultiplier()
@@ -212,6 +226,26 @@ func (_u *GroupUpdate) SetNillableStatus(v *string) *GroupUpdate {
 	if v != nil {
 		_u.SetStatus(*v)
 	}
+	return _u
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (_u *GroupUpdate) SetDisplayPlatform(v string) *GroupUpdate {
+	_u.mutation.SetDisplayPlatform(v)
+	return _u
+}
+
+// SetNillableDisplayPlatform sets the "display_platform" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableDisplayPlatform(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetDisplayPlatform(*v)
+	}
+	return _u
+}
+
+// ClearDisplayPlatform clears the value of the "display_platform" field.
+func (_u *GroupUpdate) ClearDisplayPlatform() *GroupUpdate {
+	_u.mutation.ClearDisplayPlatform()
 	return _u
 }
 
@@ -1604,6 +1638,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.I18n(); ok {
 		_spec.SetField(group.FieldI18n, field.TypeJSON, value)
 	}
+	if value, ok := _u.mutation.SystemPrompt(); ok {
+		_spec.SetField(group.FieldSystemPrompt, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.RateMultiplier(); ok {
 		_spec.SetField(group.FieldRateMultiplier, field.TypeFloat64, value)
 	}
@@ -1633,6 +1670,12 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.DuplicateOperationIDCleared() {
 		_spec.ClearField(group.FieldDuplicateOperationID, field.TypeString)
+	}
+	if value, ok := _u.mutation.DisplayPlatform(); ok {
+		_spec.SetField(group.FieldDisplayPlatform, field.TypeString, value)
+	}
+	if _u.mutation.DisplayPlatformCleared() {
+		_spec.ClearField(group.FieldDisplayPlatform, field.TypeString)
 	}
 	if value, ok := _u.mutation.Platform(); ok {
 		_spec.SetField(group.FieldPlatform, field.TypeString, value)
@@ -2323,6 +2366,20 @@ func (_u *GroupUpdateOne) SetI18n(v domain.GroupI18n) *GroupUpdateOne {
 	return _u
 }
 
+// SetSystemPrompt sets the "system_prompt" field.
+func (_u *GroupUpdateOne) SetSystemPrompt(v string) *GroupUpdateOne {
+	_u.mutation.SetSystemPrompt(v)
+	return _u
+}
+
+// SetNillableSystemPrompt sets the "system_prompt" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableSystemPrompt(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetSystemPrompt(*v)
+	}
+	return _u
+}
+
 // SetRateMultiplier sets the "rate_multiplier" field.
 func (_u *GroupUpdateOne) SetRateMultiplier(v float64) *GroupUpdateOne {
 	_u.mutation.ResetRateMultiplier()
@@ -2432,6 +2489,26 @@ func (_u *GroupUpdateOne) SetNillableStatus(v *string) *GroupUpdateOne {
 	if v != nil {
 		_u.SetStatus(*v)
 	}
+	return _u
+}
+
+// SetDisplayPlatform sets the "display_platform" field.
+func (_u *GroupUpdateOne) SetDisplayPlatform(v string) *GroupUpdateOne {
+	_u.mutation.SetDisplayPlatform(v)
+	return _u
+}
+
+// SetNillableDisplayPlatform sets the "display_platform" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableDisplayPlatform(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetDisplayPlatform(*v)
+	}
+	return _u
+}
+
+// ClearDisplayPlatform clears the value of the "display_platform" field.
+func (_u *GroupUpdateOne) ClearDisplayPlatform() *GroupUpdateOne {
+	_u.mutation.ClearDisplayPlatform()
 	return _u
 }
 
@@ -3854,6 +3931,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	if value, ok := _u.mutation.I18n(); ok {
 		_spec.SetField(group.FieldI18n, field.TypeJSON, value)
 	}
+	if value, ok := _u.mutation.SystemPrompt(); ok {
+		_spec.SetField(group.FieldSystemPrompt, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.RateMultiplier(); ok {
 		_spec.SetField(group.FieldRateMultiplier, field.TypeFloat64, value)
 	}
@@ -3883,6 +3963,12 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if _u.mutation.DuplicateOperationIDCleared() {
 		_spec.ClearField(group.FieldDuplicateOperationID, field.TypeString)
+	}
+	if value, ok := _u.mutation.DisplayPlatform(); ok {
+		_spec.SetField(group.FieldDisplayPlatform, field.TypeString, value)
+	}
+	if _u.mutation.DisplayPlatformCleared() {
+		_spec.ClearField(group.FieldDisplayPlatform, field.TypeString)
 	}
 	if value, ok := _u.mutation.Platform(); ok {
 		_spec.SetField(group.FieldPlatform, field.TypeString, value)

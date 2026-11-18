@@ -14,9 +14,95 @@ export default {
     login: 'Login',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
+    publicNavigation: 'Public navigation',
+    heroEyebrow: 'Unified AI access · visible usage',
+    relativeActivity: 'Recent site-wide activity',
+    relativeIntensity: 'Relative intensity',
+    relativeTrendAccessible: 'Recent site-wide activity trend, shown as relative percentages only',
+    loginSystem: 'Sign in',
+    resources: {
+      eyebrow: 'Model resources',
+      title: 'Three core resources. Dependable and affordable.',
+      description: 'ChatGPT, DeepSeek, and security-specialized SecAI, available steadily with fair pricing.',
+      models: {
+        gpt: {
+          type: 'General intelligence',
+          description: 'General-purpose models for writing, coding, and complex tasks.'
+        },
+        ds: {
+          type: 'Reasoning and everyday use',
+          description: 'For Chinese-language chat, reasoning, and everyday work.'
+        },
+        secai: {
+          type: 'Security specialized',
+          description: 'Specialized models tuned for information security work.'
+        }
+      },
+      footnote: 'Available models and actual pricing are shown with each group.'
+    },
+    story: {
+      access: {
+        eyebrow: 'Access',
+        title: 'One entry point for available model services',
+        description: 'Organize model access around keys and groups, then call the services currently available to you.',
+        flowLabel: 'Access flow from API key to available models',
+        key: 'API key',
+        keyDescription: 'Your access credential',
+        group: 'Group',
+        groupDescription: 'Connects to model services',
+        models: 'Available models',
+        modelsDescription: 'Defined by group settings'
+      },
+      management: {
+        eyebrow: 'Key management',
+        title: 'Keys and groups, clearly organized',
+        description: 'Manage credentials, model access, and status in one place, with room for different use cases.',
+        items: {
+          keys: {
+            title: 'Manage API keys independently',
+            description: 'Create keys for different purposes, review their usage, and change their status when needed.'
+          },
+          groups: {
+            title: 'Choose a group for each key',
+            description: 'Assign an available group to use its configured model services and billing rules.'
+          },
+          status: {
+            title: 'Keep access in control',
+            description: 'See each key’s status and enable or disable it from the key list.'
+          }
+        }
+      },
+      visibility: {
+        eyebrow: 'Usage records',
+        title: 'A clear record of usage',
+        description: 'Understand activity through trends and usage records, without estimated figures.',
+        note: 'The homepage line shows relative changes in recent site-wide activity. After signing in, your dashboard and usage history show your own usage.',
+        items: {
+          trend: {
+            label: 'TREND',
+            description: 'Review token and usage changes over time'
+          },
+          records: {
+            label: 'RECORDS',
+            description: 'Review request, model, and spending details'
+          },
+          keys: {
+            label: 'API KEYS',
+            description: 'See usage separately for each API key'
+          }
+        }
+      },
+      closing: {
+        eyebrow: 'Get started',
+        title: 'Ready to connect?',
+        description: 'Sign in to create an API key, choose a group, and start making requests.',
+        action: 'Sign in to get started',
+        dashboardAction: 'Open dashboard'
+      }
+    },
     // User-focused value proposition
-    heroSubtitle: 'One Key, All AI Models',
-    heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
+    heroSubtitle: 'Great models. Less to spend.',
+    heroDescription: 'Great models. Less to spend. Simpler access to multiple models, with more reliable API calls.',
     tags: {
       subscriptionToApi: 'Subscription to API',
       stickySession: 'Session Persistence',

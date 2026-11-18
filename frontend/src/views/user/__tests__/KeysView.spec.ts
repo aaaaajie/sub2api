@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
 
@@ -300,6 +300,61 @@ describe('user KeysView column settings', () => {
     isCurrentStep.mockReturnValue(false)
   })
 
+  afterEach(() => vi.unstubAllGlobals())
+
+  it.each(['opencode_go', 'deepseek', 'kimi', 'zhipu', 'minimax'] as const)('CCS opens client selection for %s without launching an app', async (platform) => {
+    const key = createApiKey()
+    key.group = { id: 1, name: platform, platform } as NonNullable<ApiKey['group']>
+    listKeys.mockResolvedValue({ items: [key], total: 1, page: 1, page_size: 20, pages: 1 })
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [{ id: 'test-model' }] }))))
+    const wrapper = await mountView()
+    try {
+      await wrapper.get('button[aria-label="keys.importToCcSwitch"]').trigger('click')
+      await flushPromises()
+      for (const client of ['codex', 'claudeCode', 'claudeDesktop', 'deepSeekHarness']) {
+        expect(wrapper.text()).toContain(`keys.ccsClientSelect.${client}`)
+      }
+      expect(open).not.toHaveBeenCalled()
+    } finally {
+      wrapper.unmount()
+      open.mockRestore()
+    }
+  })
+
+  it('CCS shows the backend reason and clears it after retry', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ code: 'API_KEY_EXPIRED', message: 'Key expired' }), { status: 403 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ id: 'ds' }] })))
+    vi.stubGlobal('fetch', fetchMock)
+    const wrapper = await mountView()
+    await wrapper.get('button[aria-label="keys.importToCcSwitch"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('API_KEY_EXPIRED: Key expired')
+    await getButtonByText(wrapper, 'keys.ccsClientSelect.retryModels').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('API_KEY_EXPIRED')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+  })
+
+  it('CCS ignores a stale response after closing and reopening the same key', async () => {
+    let finishOld!: (value: Response) => void
+    vi.stubGlobal('fetch', vi.fn()
+      .mockImplementationOnce(() => new Promise<Response>(resolve => { finishOld = resolve }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ id: 'ds' }] }))))
+    const wrapper = await mountView()
+    await wrapper.get('button[aria-label="keys.importToCcSwitch"]').trigger('click')
+    await wrapper.get('[data-test="close-dialog"]').trigger('click')
+    await wrapper.get('button[aria-label="keys.importToCcSwitch"]').trigger('click')
+    await flushPromises()
+    finishOld(new Response(JSON.stringify({ message: 'stale error' }), { status: 403 }))
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('stale error')
+    expect(wrapper.text()).not.toContain('keys.ccsClientSelect.modelsEmpty')
+    wrapper.unmount()
+  })
+
   it.each([
     { initialStatus: 'quota_exhausted', status: 'active', formStatus: 'active' },
     { initialStatus: 'inactive', status: 'inactive', formStatus: 'inactive' },
@@ -344,9 +399,7 @@ describe('user KeysView column settings', () => {
       'name',
       'key',
       'group',
-      'current_concurrency',
       'usage',
-      'expires_at',
       'status',
       'created_at',
       'actions',
@@ -426,9 +479,9 @@ describe('user KeysView column settings', () => {
 
     expect(visibleColumnKeys(wrapper)).toContain('rate_limit')
     expect(localStorage.getItem('api-key-hidden-columns')).toBe(
-      JSON.stringify(['id', 'last_used_at', 'last_used_ip'])
+      JSON.stringify(['id', 'current_concurrency', 'expires_at', 'last_used_at', 'last_used_ip'])
     )
-    expect(localStorage.getItem('api-key-column-settings-version')).toBe('3')
+    expect(localStorage.getItem('api-key-column-settings-version')).toBe('4')
   })
 
   it('shows the API key ID column when toggled', async () => {
@@ -470,18 +523,15 @@ describe('user KeysView column settings', () => {
     expect(visibleColumnKeys(wrapper)).toEqual([
       'name',
       'key',
-      'current_concurrency',
-      'usage',
       'rate_limit',
-      'expires_at',
       'status',
       'last_used_at',
       'actions',
     ])
     expect(localStorage.getItem('api-key-hidden-columns')).toBe(
-      JSON.stringify(['group', 'created_at', 'last_used_ip', 'id'])
+      JSON.stringify(['group', 'created_at', 'last_used_ip', 'id', 'current_concurrency', 'expires_at'])
     )
-    expect(localStorage.getItem('api-key-column-settings-version')).toBe('3')
+    expect(localStorage.getItem('api-key-column-settings-version')).toBe('4')
   })
 
   it('does not include always-visible columns in the toggleable menu', async () => {

@@ -98,6 +98,8 @@ func cloneGroupForDuplicate(source *Group, operationID string) *Group {
 		Name:                            duplicateGroupName(source.Name, 1),
 		Description:                     source.Description,
 		I18n:                            cloneGroupI18nForDuplicate(source.I18n),
+		SystemPrompt:                    source.SystemPrompt,
+		DisplayPlatform:                 source.DisplayPlatform,
 		Platform:                        source.Platform,
 		RateMultiplier:                  source.RateMultiplier,
 		PeakRateEnabled:                 source.PeakRateEnabled,
@@ -153,8 +155,9 @@ func cloneGroupForDuplicate(source *Group, operationID string) *Group {
 		DefaultMappedModel:              source.DefaultMappedModel,
 		MessagesDispatchModelConfig:     cloneGroupMessagesDispatchModelConfig(source.MessagesDispatchModelConfig),
 		ModelAllowlist: GroupModelAllowlist{
-			Enabled: source.ModelAllowlist.Enabled,
-			Models:  append([]string(nil), source.ModelAllowlist.Models...),
+			Enabled:      source.ModelAllowlist.Enabled,
+			Models:       append([]string(nil), source.ModelAllowlist.Models...),
+			DefaultModel: source.ModelAllowlist.DefaultModel,
 		},
 		// 固定账号 manifest 配置指向源分组的账号 ID，复制后成员关系可能变化，重置为关闭且列表为空。
 		CodexModelsManifestConfig:   GroupCodexModelsManifestConfig{},

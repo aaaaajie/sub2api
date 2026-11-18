@@ -51,11 +51,11 @@ const accountActionError = ref('')
 const initialEmail = (route.query.email as string | undefined) || ''
 
 function sanitizeRedirectPath(path: string | null | undefined): string {
-  if (!path) return '/dashboard'
-  if (!path.startsWith('/')) return '/dashboard'
-  if (path.startsWith('//')) return '/dashboard'
-  if (path.includes('://')) return '/dashboard'
-  if (path.includes('\n') || path.includes('\r')) return '/dashboard'
+  if (!path) return '/data-dashboard'
+  if (!path.startsWith('/')) return '/data-dashboard'
+  if (path.startsWith('//')) return '/data-dashboard'
+  if (path.includes('://')) return '/data-dashboard'
+  if (path.includes('\n') || path.includes('\r')) return '/data-dashboard'
   return path
 }
 
@@ -99,7 +99,6 @@ async function handleCreateAccount(payload: PendingOAuthCreateAccountPayload) {
       persistOAuthTokenContext(data)
       await authStore.setToken(data.access_token)
       clearAllAffiliateReferralCodes()
-      appStore.showSuccess(t('auth.loginSuccess'))
       await router.replace(redirect)
       return
     }

@@ -360,7 +360,7 @@ const needsChooser = ref(false)
 const invitationCode = ref('')
 const isSubmitting = ref(false)
 const invitationError = ref('')
-const redirectTo = ref('/dashboard')
+const redirectTo = ref('/data-dashboard')
 const adoptionRequired = ref(false)
 const suggestedDisplayName = ref('')
 const suggestedAvatarUrl = ref('')
@@ -471,11 +471,11 @@ function readLegacyFragmentLogin(params: URLSearchParams): OAuthTokenResponse | 
 }
 
 function sanitizeRedirectPath(path: string | null | undefined): string {
-  if (!path) return '/dashboard'
-  if (!path.startsWith('/')) return '/dashboard'
-  if (path.startsWith('//')) return '/dashboard'
-  if (path.includes('://')) return '/dashboard'
-  if (path.includes('\n') || path.includes('\r')) return '/dashboard'
+  if (!path) return '/data-dashboard'
+  if (!path.startsWith('/')) return '/data-dashboard'
+  if (path.startsWith('//')) return '/data-dashboard'
+  if (path.includes('://')) return '/data-dashboard'
+  if (path.includes('\n') || path.includes('\r')) return '/data-dashboard'
   return path
 }
 
@@ -545,7 +545,7 @@ function resolveRequestedWeChatOAuthMode(): 'open' | 'mp' | null {
 
 function resolveRedirectTarget(): string {
   return sanitizeRedirectPath(
-    (route.query.redirect as string | undefined) || redirectTo.value || '/dashboard'
+    (route.query.redirect as string | undefined) || redirectTo.value || '/data-dashboard'
   )
 }
 
@@ -820,7 +820,6 @@ async function finalizeCompletion(completion: PendingOAuthExchangeResponse, redi
   persistOAuthTokenContext(completion)
   await authStore.setToken(completion.access_token)
   clearAllAffiliateReferralCodes()
-  appStore.showSuccess(t('auth.loginSuccess'))
   await router.replace(redirect)
 }
 
@@ -973,7 +972,6 @@ async function handleSubmitTotpChallenge() {
     persistOAuthTokenContext(completion)
     await authStore.setToken(completion.access_token)
     clearAllAffiliateReferralCodes()
-    appStore.showSuccess(t('auth.loginSuccess'))
     await router.replace(redirectTo.value)
   } catch (e: unknown) {
     totpError.value = getRequestErrorMessage(e, t('auth.loginFailed'))
@@ -1026,7 +1024,7 @@ onMounted(async () => {
   const error = params.get('error')
   const errorDesc = params.get('error_description') || params.get('error_message') || ''
   const redirect = sanitizeRedirectPath(
-    params.get('redirect') || (route.query.redirect as string | undefined) || '/dashboard'
+    params.get('redirect') || (route.query.redirect as string | undefined) || '/data-dashboard'
   )
 
   try {
@@ -1034,7 +1032,6 @@ onMounted(async () => {
       persistOAuthTokenContext(legacyLogin)
       await authStore.setToken(legacyLogin.access_token)
       clearAllAffiliateReferralCodes()
-      appStore.showSuccess(t('auth.loginSuccess'))
       await router.replace(redirect)
       return
     }
@@ -1055,7 +1052,7 @@ onMounted(async () => {
 
     const completion = await exchangePendingOAuthCompletion() as PendingWeChatCompletion
     const completionRedirect = sanitizeRedirectPath(
-      completion.redirect || (route.query.redirect as string | undefined) || '/dashboard'
+      completion.redirect || (route.query.redirect as string | undefined) || '/data-dashboard'
     )
     applyAdoptionSuggestionState(completion)
     redirectTo.value = completionRedirect

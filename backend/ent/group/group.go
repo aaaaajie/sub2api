@@ -28,6 +28,8 @@ const (
 	FieldDescription = "description"
 	// FieldI18n holds the string denoting the i18n field in the database.
 	FieldI18n = "i18n"
+	// FieldSystemPrompt holds the string denoting the system_prompt field in the database.
+	FieldSystemPrompt = "system_prompt"
 	// FieldRateMultiplier holds the string denoting the rate_multiplier field in the database.
 	FieldRateMultiplier = "rate_multiplier"
 	// FieldPeakRateEnabled holds the string denoting the peak_rate_enabled field in the database.
@@ -44,6 +46,8 @@ const (
 	FieldStatus = "status"
 	// FieldDuplicateOperationID holds the string denoting the duplicate_operation_id field in the database.
 	FieldDuplicateOperationID = "duplicate_operation_id"
+	// FieldDisplayPlatform holds the string denoting the display_platform field in the database.
+	FieldDisplayPlatform = "display_platform"
 	// FieldPlatform holds the string denoting the platform field in the database.
 	FieldPlatform = "platform"
 	// FieldSubscriptionType holds the string denoting the subscription_type field in the database.
@@ -233,6 +237,7 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldI18n,
+	FieldSystemPrompt,
 	FieldRateMultiplier,
 	FieldPeakRateEnabled,
 	FieldPeakStart,
@@ -241,6 +246,7 @@ var Columns = []string{
 	FieldIsExclusive,
 	FieldStatus,
 	FieldDuplicateOperationID,
+	FieldDisplayPlatform,
 	FieldPlatform,
 	FieldSubscriptionType,
 	FieldDailyLimitUsd,
@@ -334,6 +340,8 @@ var (
 	NameValidator func(string) error
 	// DefaultI18n holds the default value on creation for the "i18n" field.
 	DefaultI18n domain.GroupI18n
+	// DefaultSystemPrompt holds the default value on creation for the "system_prompt" field.
+	DefaultSystemPrompt string
 	// DefaultRateMultiplier holds the default value on creation for the "rate_multiplier" field.
 	DefaultRateMultiplier float64
 	// DefaultPeakRateEnabled holds the default value on creation for the "peak_rate_enabled" field.
@@ -356,6 +364,8 @@ var (
 	StatusValidator func(string) error
 	// DuplicateOperationIDValidator is a validator for the "duplicate_operation_id" field. It is called by the builders before save.
 	DuplicateOperationIDValidator func(string) error
+	// DefaultDisplayPlatform holds the default value on creation for the "display_platform" field.
+	DefaultDisplayPlatform string
 	// DefaultPlatform holds the default value on creation for the "platform" field.
 	DefaultPlatform string
 	// PlatformValidator is a validator for the "platform" field. It is called by the builders before save.
@@ -479,6 +489,11 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
 }
 
+// BySystemPrompt orders the results by the system_prompt field.
+func BySystemPrompt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSystemPrompt, opts...).ToFunc()
+}
+
 // ByRateMultiplier orders the results by the rate_multiplier field.
 func ByRateMultiplier(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRateMultiplier, opts...).ToFunc()
@@ -517,6 +532,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByDuplicateOperationID orders the results by the duplicate_operation_id field.
 func ByDuplicateOperationID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDuplicateOperationID, opts...).ToFunc()
+}
+
+// ByDisplayPlatform orders the results by the display_platform field.
+func ByDisplayPlatform(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDisplayPlatform, opts...).ToFunc()
 }
 
 // ByPlatform orders the results by the platform field.

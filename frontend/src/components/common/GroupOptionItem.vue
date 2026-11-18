@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-w-0 flex-1 items-start justify-between gap-3">
+  <div class="flex min-w-0 flex-1 items-center justify-between gap-3">
     <!-- Left: name + description -->
     <div
       class="flex min-w-0 flex-1 flex-col items-start"
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Right: rate pill + checkmark (vertically centered to first row) -->
-    <div class="flex shrink-0 items-center gap-2 pt-0.5">
+    <div class="flex shrink-0 items-center gap-2">
       <div class="flex shrink-0 flex-col items-end gap-1">
         <!-- Rate pill (platform color) -->
         <span v-if="rateMultiplier !== undefined" :class="['inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold', ratePillClass]">

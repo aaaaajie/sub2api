@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
@@ -50,7 +52,17 @@ type UsageHandler struct {
 	apiKeyService  *service.APIKeyService
 	opsService     *service.OpsService
 	settingService *service.SettingService
+	publicTrendMu  sync.Mutex
+	publicTrendAt  time.Time
+	publicTrend    []publicActivityTrendPoint
 }
+
+type publicActivityTrendPoint struct {
+	Date            string  `json:"date"`
+	ActivityPercent float64 `json:"activity_percent"`
+}
+
+const publicActivityTrendCacheTTL = time.Minute
 
 // NewUsageHandler creates a new UsageHandler
 func NewUsageHandler(
@@ -182,6 +194,8 @@ func (h *UsageHandler) parseUserUsageFilters(c *gin.Context, requireRange bool) 
 	if requireRange {
 		if startPtr == nil {
 			switch c.DefaultQuery("period", "") {
+			case "24h":
+				startTime = now.Add(-24 * time.Hour)
 			case "today":
 				startTime = timezone.StartOfDayInUserLocation(now, userTZ)
 			case "week":
@@ -485,6 +499,83 @@ func (h *UsageHandler) DashboardTrend(c *gin.Context) {
 		"end_date":    parsed.EndTime.Add(-24 * time.Hour).Format("2006-01-02"),
 		"granularity": granularity,
 	})
+}
+
+// DashboardRecentHours returns the authenticated user's ten latest active hours.
+func (h *UsageHandler) DashboardRecentHours(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+	tz := c.DefaultQuery("timezone", "UTC")
+	if _, err := time.LoadLocation(tz); err != nil || tz == "" || tz == "Local" {
+		response.BadRequest(c, "Invalid timezone")
+		return
+	}
+	trend, err := h.usageService.GetRecentUserUsageHours(c.Request.Context(), subject.UserID, tz)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"trend": trend, "granularity": "hour"})
+}
+
+// PublicActivityTrend exposes the ten most recent non-empty site-wide hourly activity buckets for the landing page.
+// The response deliberately excludes raw token totals, request counts, model names, and user data.
+// GET /api/v1/public/recent-usage-activity
+func (h *UsageHandler) PublicActivityTrend(c *gin.Context) {
+	if h.usageService == nil {
+		response.InternalError(c, "Usage service not available")
+		return
+	}
+
+	h.publicTrendMu.Lock()
+	if !h.publicTrendAt.IsZero() && time.Since(h.publicTrendAt) < publicActivityTrendCacheTTL {
+		trend := append([]publicActivityTrendPoint(nil), h.publicTrend...)
+		h.publicTrendMu.Unlock()
+		c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=240")
+		response.Success(c, gin.H{"trend": trend})
+		return
+	}
+
+	trendRows, err := h.usageService.GetRecentUsageActivityHours(c.Request.Context(), 10)
+	if err != nil {
+		h.publicTrendMu.Unlock()
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	var peak int64
+	for _, row := range trendRows {
+		if row.TotalTokens > peak {
+			peak = row.TotalTokens
+		}
+	}
+
+	publicTrend := make([]publicActivityTrendPoint, len(trendRows))
+	for index, row := range trendRows {
+		chronologicalIndex := len(trendRows) - index - 1
+		activityPercent := 0.0
+		if peak > 0 {
+			activityPercent = math.Round(float64(row.TotalTokens)/float64(peak)*10000) / 100
+		}
+		if activityPercent == 0 && row.TotalTokens > 0 {
+			activityPercent = 0.01
+		}
+		publicTrend[chronologicalIndex] = publicActivityTrendPoint{
+			Date:            row.BucketStart.Format(time.RFC3339),
+			ActivityPercent: activityPercent,
+		}
+	}
+
+	h.publicTrend = publicTrend
+	h.publicTrendAt = time.Now()
+	responseTrend := append([]publicActivityTrendPoint(nil), publicTrend...)
+	h.publicTrendMu.Unlock()
+
+	c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=240")
+	response.Success(c, gin.H{"trend": responseTrend})
 }
 
 // DashboardModels handles getting user model usage statistics

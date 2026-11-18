@@ -75,6 +75,7 @@ func validatePlanPatch(req UpdatePlanRequest) error {
 
 // PlanGroupInfo holds the group details needed for subscription plan display.
 type PlanGroupInfo struct {
+	DisplayPlatform    string   `json:"display_platform,omitempty"`
 	Platform           string   `json:"platform"`
 	Name               string   `json:"name"`
 	RateMultiplier     float64  `json:"rate_multiplier"`
@@ -112,6 +113,7 @@ func (s *PaymentConfigService) GetGroupInfoMap(ctx context.Context, plans []*dbe
 	for _, g := range groups {
 		m[int64(g.ID)] = PlanGroupInfo{
 			Platform:           g.Platform,
+			DisplayPlatform:    g.DisplayPlatform,
 			Name:               g.Name,
 			RateMultiplier:     g.RateMultiplier,
 			PeakRateEnabled:    g.PeakRateEnabled,
@@ -225,4 +227,11 @@ func (s *PaymentConfigService) GetPlan(ctx context.Context, id int64) (*dbent.Su
 		return nil, infraerrors.NotFound("PLAN_NOT_FOUND", "subscription plan not found")
 	}
 	return plan, nil
+}
+
+func (g PlanGroupInfo) PresentationPlatform() string {
+	if g.DisplayPlatform != "" {
+		return g.DisplayPlatform
+	}
+	return g.Platform
 }

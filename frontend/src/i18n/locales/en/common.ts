@@ -57,6 +57,8 @@ export default {
     disabled: 'Disabled',
 	    total: 'Total',
 	    balance: 'Balance',
+	    hideBalance: 'Hide balance',
+	    showBalance: 'Show balance',
 	    availableBalance: 'Available balance',
 	    frozenBalance: 'Frozen balance',
 	    totalBalance: 'Total balance',
@@ -164,6 +166,9 @@ export default {
   // Navigation
   nav: {
     dashboard: 'Dashboard',
+    dataDashboard: 'Data Dashboard',
+    myInfo: 'My Info',
+    primaryNavigation: 'Primary navigation',
     announcements: 'Announcements',
     apiKeys: 'API Keys',
     batchImage: 'Batch Images',
@@ -197,6 +202,7 @@ export default {
     github: 'GitHub',
     mySubscriptions: 'My Subscriptions',
     buySubscription: 'Recharge / Subscription',
+    creditRecharge: 'Quota Top-up',
     recharge: 'Recharge',
     subscribe: 'Subscription',
     docs: 'Docs',

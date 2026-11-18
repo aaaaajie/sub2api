@@ -1,8 +1,8 @@
 <template>
-  <AuthLayout>
+  <AuthLayout :embedded="embedded">
     <div class="space-y-6">
       <!-- Title -->
-      <div class="text-center">
+      <div v-if="!embedded" class="text-center">
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
           {{ t('auth.welcomeBack') }}
         </h2>
@@ -200,8 +200,17 @@
     <template v-if="!backendModeEnabled && publicSettingsLoaded && registrationEnabled" #footer>
       <p class="text-gray-500 dark:text-dark-400">
         {{ t('auth.dontHaveAccount') }}
+        <button
+          v-if="embedded"
+          type="button"
+          class="font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+          @click="emit('register')"
+        >
+          {{ t('auth.signUp') }}
+        </button>
         <router-link
-          to="/register"
+          v-else
+          :to="{ path: '/register', query: { redirect: resolveLoginRedirect() } }"
           class="font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
         >
           {{ t('auth.signUp') }}
@@ -254,6 +263,22 @@ import { clearAllAffiliateReferralCodes } from '@/utils/oauthAffiliate'
 
 const { t } = useI18n()
 const LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
+const OAUTH_HOME_TRANSITION_KEY = 'sub2api:home-login-transition'
+
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+  redirectTo?: string
+}>(), {
+  embedded: false,
+  redirectTo: '/data-dashboard'
+})
+const emit = defineEmits<{
+  success: []
+  register: []
+  authPending: []
+  authFailure: []
+  authStepUp: []
+}>()
 
 // ==================== Router & Stores ====================
 
@@ -574,6 +599,7 @@ async function handleLogin(): Promise<void> {
   }
 
   isLoading.value = true
+  emit('authPending')
 
   try {
     // Call auth store login（阿里云 captchaVerifyParam 复用 turnstile_token 字段）
@@ -594,18 +620,14 @@ async function handleLogin(): Promise<void> {
       totpTempToken.value = totpResponse.temp_token || ''
       totpUserEmailMasked.value = totpResponse.user_email_masked || ''
       show2FAModal.value = true
+      emit('authStepUp')
       isLoading.value = false
       return
     }
 
-    // Show success toast
-    clearAllAffiliateReferralCodes()
-    appStore.showSuccess(t('auth.loginSuccess'))
-
-    // Redirect to dashboard or intended route
-    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
-    await router.push(redirectTo)
+    await completeAuthentication()
   } catch (error: unknown) {
+    emit('authFailure')
     errorMessage.value = extractI18nErrorMessage(error, t, 'auth.errors', t('auth.loginFailed'))
 
     // Also show error toast
@@ -641,12 +663,11 @@ async function handlePasskeyLogin(): Promise<void> {
         : { turnstile_token: result.token }
     }
 
+    emit('authPending')
     await authStore.loginWithPasskey(proof)
-    clearAllAffiliateReferralCodes()
-    appStore.showSuccess(t('auth.loginSuccess'))
-    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
-    await router.push(redirectTo)
+    await completeAuthentication()
   } catch (error: unknown) {
+    emit('authFailure')
     const fallback = error instanceof DOMException && error.name === 'NotAllowedError'
       ? t('auth.passkeyCancelled')
       : t('auth.passkeyFailed')
@@ -663,8 +684,20 @@ async function handlePasskeyLogin(): Promise<void> {
 async function handleOAuthStart(request: OAuthLoginStart): Promise<void> {
   if (authActionDisabled.value) return
 
+  const target = resolveLoginRedirect()
+  const transitionUrl = `/home?auth_transition=1&redirect=${encodeURIComponent(target)}`
+  try {
+    sessionStorage.setItem(OAUTH_HOME_TRANSITION_KEY, target)
+  } catch {
+    // OAuth still works when session storage is unavailable; the callback skips the home transition.
+  }
+  const oauthRequest: OAuthLoginStart = {
+    ...request,
+    params: { ...request.params, redirect: transitionUrl }
+  }
+
   if (!actionCaptchaEnabled.value) {
-    window.location.href = buildOAuthLoginStartURL(request)
+    window.location.href = buildOAuthLoginStartURL(oauthRequest)
     return
   }
 
@@ -674,7 +707,7 @@ async function handleOAuthStart(request: OAuthLoginStart): Promise<void> {
     if (!proof) return
 
     const result = await startOAuthLogin(
-      request,
+      oauthRequest,
       tencentCaptchaEnabled.value
         ? {
             tencent_captcha_ticket: proof.token,
@@ -707,14 +740,8 @@ async function handle2FAVerify(code: string): Promise<void> {
   try {
     await authStore.login2FA(totpTempToken.value, code)
 
-    // Close modal and show success
     show2FAModal.value = false
-    clearAllAffiliateReferralCodes()
-    appStore.showSuccess(t('auth.loginSuccess'))
-
-    // Redirect to dashboard or intended route
-    const redirectTo = (router.currentRoute.value.query.redirect as string) || '/dashboard'
-    await router.push(redirectTo)
+    await completeAuthentication()
   } catch (error: unknown) {
     const err = error as { message?: string; response?: { data?: { message?: string } } }
     const message = err.response?.data?.message || err.message || t('profile.totp.loginFailed')
@@ -730,6 +757,24 @@ function handle2FACancel(): void {
   show2FAModal.value = false
   totpTempToken.value = ''
   totpUserEmailMasked.value = ''
+}
+
+function resolveLoginRedirect(): string {
+  const queryRedirect = router.currentRoute.value.query.redirect
+  const candidate = typeof queryRedirect === 'string' ? queryRedirect : props.redirectTo
+  if (!candidate.startsWith('/') || candidate.startsWith('//') || candidate.includes('://')) {
+    return '/data-dashboard'
+  }
+  return candidate
+}
+
+async function completeAuthentication(): Promise<void> {
+  clearAllAffiliateReferralCodes()
+  if (props.embedded) {
+    emit('success')
+    return
+  }
+  await router.push(resolveLoginRedirect())
 }
 </script>
 

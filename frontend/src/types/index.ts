@@ -238,8 +238,6 @@ export interface PublicSettings {
   api_base_url: string
   contact_info: string
   doc_url: string
-  home_content: string
-  compact_home_enabled: boolean
   hide_ccs_import_button: boolean
   payment_enabled: boolean
   risk_control_enabled: boolean
@@ -581,6 +579,7 @@ export interface Group {
   name: string
   description: string | null
   platform: GroupPlatform
+  display_platform?: GroupPlatform | ''
   rate_multiplier: number
   rpm_limit?: number // Group-level RPM cap (0 = unlimited); overrides user-level rpm_limit when set
   max_reasoning_effort?: string // Anthropic/OpenAI reasoning ceiling; empty means unlimited
@@ -631,6 +630,7 @@ export interface Group {
   allow_messages_dispatch?: boolean
   // OpenAI Live 接口开关
   allow_live: boolean
+  default_model?: string
   default_mapped_model?: string
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   require_oauth_only: boolean
@@ -642,6 +642,8 @@ export interface Group {
 export interface AdminGroup extends Group {
   // 管理端的 name / description 始终是原字段，各语言译文另放在 i18n 里
   i18n?: GroupI18n
+	// Only administrators receive this per-group gateway instruction.
+	system_prompt?: string
   force_openai_fast: boolean
   free_openai_fast: boolean
   model_pricing: import('@/api/admin/channels').ChannelModelPricing[]
@@ -679,6 +681,7 @@ export interface AdminGroup extends Group {
 export interface ModelAllowlist {
   enabled: boolean
   models: string[]
+  default_model?: string
 }
 
 // 固定账号获取 Codex Model Manifest 配置（仅 openai 分组）
@@ -809,7 +812,9 @@ export interface CreateGroupRequest {
   name: string
   description?: string | null
   i18n?: GroupI18n
+  system_prompt?: string
   platform?: GroupPlatform
+  display_platform?: GroupPlatform | ''
   rate_multiplier?: number
   is_exclusive?: boolean
   subscription_type?: SubscriptionType
@@ -876,7 +881,9 @@ export interface UpdateGroupRequest {
   name?: string
   description?: string | null
   i18n?: GroupI18n
+  system_prompt?: string
   platform?: GroupPlatform
+  display_platform?: GroupPlatform | ''
   rate_multiplier?: number
   is_exclusive?: boolean
   status?: 'active' | 'inactive'

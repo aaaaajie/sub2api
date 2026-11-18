@@ -1,0 +1,30 @@
+/* Theme reveal and login transitions keep their own choreography. */
+html.route-transition .app-page-content { view-transition-name: page-content; }
+html.route-transition .app-page-header { view-transition-name: page-header; }
+html.route-transition .bottom-nav-anchor { view-transition-name: page-nav; }
+html.route-transition .bottom-nav-active { view-transition-name: nav-selection; }
+html.route-transition::view-transition-group(*) { animation-duration: 220ms; animation-timing-function: cubic-bezier(.2,.7,.2,1); }
+html.route-transition::view-transition-group(nav-selection) { z-index: 0; }
+html.route-transition::view-transition-group(page-nav) { z-index: 1; }
+html.route-transition::view-transition-old(root),
+html.route-transition::view-transition-new(root),
+html.route-transition::view-transition-old(page-header),
+html.route-transition::view-transition-new(page-header),
+html.route-transition::view-transition-old(page-nav),
+html.route-transition::view-transition-new(page-nav),
+html.route-transition::view-transition-old(nav-selection),
+html.route-transition::view-transition-new(nav-selection) { animation: none; mix-blend-mode: normal; }
+html.route-transition::view-transition-old(page-header),
+html.route-transition::view-transition-old(page-nav),
+html.route-transition::view-transition-old(nav-selection) { opacity: 0; }
+html.route-transition::view-transition-group(page-header),
+html.route-transition::view-transition-group(page-nav) { animation: none; }
+html.route-transition::view-transition-old(page-content) { animation: page-content-out 100ms ease-out both; }
+html.route-transition::view-transition-new(page-content) { animation: page-content-in 200ms 80ms cubic-bezier(.2,.7,.2,1) both; }
+@keyframes page-content-out { to { opacity: 0; } }
+@keyframes page-content-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  html.route-transition::view-transition-group(*),
+  html.route-transition::view-transition-old(*),
+  html.route-transition::view-transition-new(*) { animation: none !important; }
+}

@@ -176,7 +176,7 @@ describe('RegisterView', () => {
       promo_code: undefined,
       invitation_code: undefined
     })
-    expect(pushMock).toHaveBeenCalledWith('/dashboard')
+    expect(pushMock).toHaveBeenCalledWith('/data-dashboard')
   })
 
   it('requires matching confirmation before storing only the registration fields for email verification', async () => {
@@ -202,7 +202,8 @@ describe('RegisterView', () => {
 
     expect(JSON.parse(sessionStorage.getItem('register_data')!)).toEqual({
       email: 'user@example.com',
-      password: 'secret-123'
+      password: 'secret-123',
+      pending_redirect: '/data-dashboard'
     })
     expect(pushMock).toHaveBeenCalledWith('/email-verify')
     expect(registerMock).not.toHaveBeenCalled()

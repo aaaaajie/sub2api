@@ -204,18 +204,19 @@ func (s *OpenAIGatewayService) MergeGroupConfiguredCodexModels(
 	if err != nil {
 		return fmt.Errorf("merge group configured Codex models: %w", err)
 	}
-	if group.CodexModelsManifestConfig.Enabled && group.ModelAllowlistEnabled() {
-		body, err = orderPinnedCodexModelsBySelection(body, group.ModelAllowlist)
-		if err != nil {
-			return fmt.Errorf("order pinned Codex models: %w", err)
-		}
-		changed = true
-	}
 	filtered, retired, err := filterRetiredOpenAIPublicModelsBody(body, accounts, true)
 	if err != nil {
 		return fmt.Errorf("filter retired Codex models: %w", err)
 	}
 	body = filtered
+	if len(group.ModelAllowlist.Models) > 0 {
+		ordered, orderChanged, err := orderCodexModelsManifestByGroupPreference(body, group.ModelAllowlist)
+		if err != nil {
+			return fmt.Errorf("order Codex models by group preference: %w", err)
+		}
+		body = ordered
+		changed = changed || orderChanged
+	}
 	if changed || retired {
 		manifest.Body = body
 		manifest.ETag = codexModelsManifestBodyETag(body)
@@ -293,36 +294,38 @@ func openAIConfiguredCodexModelIDs(accounts []Account) []string {
 
 func openAIConfiguredCodexModelIDsForGroup(accounts []Account, group *Group) []string {
 	models := supplementUnmappedOpenAIModels(accounts, openAIConfiguredCodexModelIDs(accounts))
-	if group == nil || !group.ModelAllowlistEnabled() {
+	if group == nil {
 		return filterRetiredOpenAIModelIDs(accounts, models)
 	}
 
-	seen := make(map[string]struct{}, len(models)+len(group.ModelAllowlist.Models))
-	for _, modelID := range models {
-		seen[modelID] = struct{}{}
-	}
-	for _, selectedModel := range group.ModelAllowlist.Models {
-		selectedModel = strings.TrimSpace(selectedModel)
-		if selectedModel == "" || strings.Contains(selectedModel, "*") {
-			continue
+	if group.ModelAllowlistEnabled() {
+		seen := make(map[string]struct{}, len(models)+len(group.ModelAllowlist.Models))
+		for _, modelID := range models {
+			seen[modelID] = struct{}{}
 		}
-		for i := range accounts {
-			account := &accounts[i]
-			if account.Platform != PlatformOpenAI {
+		for _, selectedModel := range group.ModelAllowlist.Models {
+			selectedModel = strings.TrimSpace(selectedModel)
+			if selectedModel == "" || strings.Contains(selectedModel, "*") {
 				continue
 			}
-			mappedModel, matched := account.ResolveMappedModel(selectedModel)
-			if !matched || strings.TrimSpace(mappedModel) == "" {
-				continue
+			for i := range accounts {
+				account := &accounts[i]
+				if account.Platform != PlatformOpenAI {
+					continue
+				}
+				mappedModel, matched := account.ResolveMappedModel(selectedModel)
+				if !matched || strings.TrimSpace(mappedModel) == "" {
+					continue
+				}
+				if _, exists := seen[selectedModel]; !exists {
+					seen[selectedModel] = struct{}{}
+					models = append(models, selectedModel)
+				}
+				break
 			}
-			if _, exists := seen[selectedModel]; !exists {
-				seen[selectedModel] = struct{}{}
-				models = append(models, selectedModel)
-			}
-			break
 		}
 	}
-	sort.Strings(models)
+	models = group.ModelAllowlist.OrderForListing(models)
 	return filterRetiredOpenAIModelIDs(accounts, models)
 }
 
@@ -977,7 +980,7 @@ func buildCodexModelsManifest(
 ) ([]byte, error) {
 	seen := make(map[string]struct{}, len(modelIDs))
 	models := make([]json.RawMessage, 0, len(modelIDs))
-	for _, modelID := range modelIDs {
+	for modelIndex, modelID := range modelIDs {
 		modelID = strings.TrimSpace(modelID)
 		if modelID == "" {
 			continue
@@ -995,6 +998,7 @@ func buildCodexModelsManifest(
 		seen[modelID] = struct{}{}
 		descriptor := newConfiguredCodexModelDescriptor(metadataModelID)
 		descriptor.Slug = modelID
+		descriptor.Priority = configuredCodexModelPriority + len(modelIDs) - modelIndex
 		descriptor.SupportsSearchTool = searchToolModels[modelID]
 		if metadata, ok := modelMetadata[modelID]; ok {
 			applyUpstreamModelMetadataToCodexDescriptor(&descriptor, metadata)

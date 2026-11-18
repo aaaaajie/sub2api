@@ -40,7 +40,7 @@
       >
         <tr
           v-for="(section, secIdx) in channel.platforms"
-          :key="`${channel.name}-${section.platform}`"
+          :key="`${channel.name}-${section.platform}-${secIdx}`"
           class="transition-colors hover:bg-gray-50/40 dark:hover:bg-dark-800/40"
           :class="{ 'border-t border-gray-100/70 dark:border-dark-700/50': secIdx > 0 }"
         >
@@ -197,8 +197,8 @@
 
         <div class="divide-y divide-gray-100 dark:divide-dark-700/60">
           <div
-            v-for="section in channel.platforms"
-            :key="`mobile-${channel.name}-${section.platform}`"
+            v-for="(section, secIdx) in channel.platforms"
+            :key="`mobile-${channel.name}-${section.platform}-${secIdx}`"
             class="min-w-0 py-3 first:pt-0 last:pb-0"
           >
             <span

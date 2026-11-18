@@ -58,6 +58,7 @@ export interface UserDashboardStats {
 export interface TrendParams {
   start_date?: string
   end_date?: string
+  period?: '24h' | 'today' | 'week' | 'month'
   granularity?: 'day' | 'hour'
   api_key_id?: number
   model?: string
@@ -267,6 +268,11 @@ export async function getDashboardStats(): Promise<UserDashboardStats> {
  * @param params - Query parameters for filtering
  * @returns Usage trend data for current user
  */
+export async function getDashboardRecentHours(timezone: string): Promise<{ trend: TrendDataPoint[]; granularity: 'hour' }> {
+  const { data } = await apiClient.get('/usage/dashboard/recent-hours', { params: { timezone } })
+  return data
+}
+
 export async function getDashboardTrend(params?: TrendParams): Promise<TrendResponse> {
   const { data } = await apiClient.get<TrendResponse>('/usage/dashboard/trend', { params })
   return data
@@ -380,6 +386,7 @@ export const usageAPI = {
   // Dashboard
   getDashboardStats,
   getDashboardTrend,
+  getDashboardRecentHours,
   getDashboardModels,
   getMyApiKeyDailyUsage,
   getDashboardSnapshotV2,

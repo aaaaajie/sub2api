@@ -13,6 +13,13 @@ import (
 // Minimal UsageLogRepository stub for batch usage tests (HEAD lacks geminiUsageLogRepoStub).
 type usageBatchLogRepoStub struct{}
 
+func (r *usageBatchLogRepoStub) GetRecentUserUsageHours(context.Context, int64, string) ([]usagestats.TrendDataPoint, error) {
+	return nil, nil
+}
+func (r *usageBatchLogRepoStub) GetRecentUsageActivityHours(context.Context, int) ([]RecentUsageActivityHour, error) {
+	return nil, nil
+}
+
 var _ UsageLogRepository = (*usageBatchLogRepoStub)(nil)
 
 func (r *usageBatchLogRepoStub) Create(context.Context, *UsageLog) (bool, error) {

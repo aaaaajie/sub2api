@@ -316,6 +316,18 @@ func (s *UsageService) GetUserUsageTrendByUserID(ctx context.Context, userID int
 	return trend, nil
 }
 
+func (s *UsageService) GetRecentUserUsageHours(ctx context.Context, userID int64, timezone string) ([]usagestats.TrendDataPoint, error) {
+	return s.usageRepo.GetRecentUserUsageHours(ctx, userID, timezone)
+}
+
+func (s *UsageService) GetRecentUsageActivityHours(ctx context.Context, limit int) ([]RecentUsageActivityHour, error) {
+	points, err := s.usageRepo.GetRecentUsageActivityHours(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("get recent hourly usage activity: %w", err)
+	}
+	return points, nil
+}
+
 // GetUsageTrendWithFilters returns trend data using the shared usage filter shape.
 func (s *UsageService) GetUsageTrendWithFilters(ctx context.Context, startTime, endTime time.Time, granularity string, filters usagestats.UsageLogFilters) ([]usagestats.TrendDataPoint, error) {
 	type usageTrendWithFiltersRepo interface {

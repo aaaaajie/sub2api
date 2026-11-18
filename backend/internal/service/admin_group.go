@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -379,7 +380,7 @@ func normalizeCreateGroupInputForSimpleMode(input *CreateGroupInput) {
 		return
 	}
 	*input = CreateGroupInput{
-		Name: input.Name, Description: input.Description, I18n: input.I18n, Platform: input.Platform,
+		Name: input.Name, Description: input.Description, I18n: input.I18n, Platform: input.Platform, DisplayPlatform: input.DisplayPlatform,
 		RateMultiplier: 1, SubscriptionType: SubscriptionTypeStandard,
 	}
 }
@@ -388,7 +389,7 @@ func normalizeUpdateGroupInputForSimpleMode(input *UpdateGroupInput) {
 	if input == nil {
 		return
 	}
-	*input = UpdateGroupInput{Name: input.Name, Description: input.Description, I18n: input.I18n}
+	*input = UpdateGroupInput{Name: input.Name, Description: input.Description, I18n: input.I18n, DisplayPlatform: input.DisplayPlatform}
 }
 
 func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupInput) (*Group, error) {
@@ -400,6 +401,12 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	}
 	if input.RateMultiplier <= 0 {
 		return nil, errors.New("rate_multiplier must be > 0")
+	}
+	if input.DisplayPlatform != "" && !domain.IsGroupPlatform(input.DisplayPlatform) {
+		return nil, infraerrors.BadRequest("INVALID_DISPLAY_PLATFORM", "Unknown display platform")
+	}
+	if utf8.RuneCountInString(input.SystemPrompt) > MaxGroupSystemPromptRunes {
+		return nil, infraerrors.BadRequest("GROUP_SYSTEM_PROMPT_TOO_LONG", "system_prompt must be 8192 characters or fewer")
 	}
 	i18n, err := normalizeGroupI18n(input.I18n)
 	if err != nil {
@@ -579,6 +586,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		Name:                            input.Name,
 		Description:                     input.Description,
 		I18n:                            i18n,
+		SystemPrompt:                    input.SystemPrompt,
+		DisplayPlatform:                 input.DisplayPlatform,
 		Platform:                        platform,
 		RateMultiplier:                  input.RateMultiplier,
 		IsExclusive:                     input.IsExclusive,
@@ -790,6 +799,18 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.Description != nil {
 		group.Description = *input.Description
+	}
+	if input.DisplayPlatform != nil {
+		if *input.DisplayPlatform != "" && !domain.IsGroupPlatform(*input.DisplayPlatform) {
+			return nil, infraerrors.BadRequest("INVALID_DISPLAY_PLATFORM", "Unknown display platform")
+		}
+		group.DisplayPlatform = *input.DisplayPlatform
+	}
+	if input.SystemPrompt != nil {
+		if utf8.RuneCountInString(*input.SystemPrompt) > MaxGroupSystemPromptRunes {
+			return nil, infraerrors.BadRequest("GROUP_SYSTEM_PROMPT_TOO_LONG", "system_prompt must be 8192 characters or fewer")
+		}
+		group.SystemPrompt = *input.SystemPrompt
 	}
 	if input.I18n != nil {
 		i18n, err := normalizeGroupI18n(*input.I18n)

@@ -139,6 +139,53 @@ export default {
 
   // Onboarding Tour
   onboarding: {
+    quickStart: {
+      "start": "开始使用",
+      "welcome": {
+            "title": "几步，开始第一次调用",
+            "description": "一起创建密钥、选择分组，再导入 CC Switch。你可以随时关闭引导，之后从头像菜单重新打开。"
+      },
+      "keys": {
+            "title": "打开 API 密钥",
+            "description": "点击底部的 API 密钥。这里管理连接客户端所需的访问凭证。"
+      },
+      "create": {
+            "title": "创建你的第一把密钥",
+            "description": "点击创建密钥。按用途命名，后续更容易区分和管理。"
+      },
+      "name": {
+            "title": "给密钥起个名字",
+            "description": "例如“日常编程”或“我的电脑”。名称只用于你自己识别，不影响调用。"
+      },
+      "provider": {
+            "title": "选择模型服务类型",
+            "description": "选择想使用的服务类型，下面会展示对应的可用分组。"
+      },
+      "group": {
+            "title": "选择使用分组",
+            "description": "分组决定这把密钥可调用的模型和计费倍率。选好后点击下一步；没有可选分组时，可先退出引导并联系站点支持。"
+      },
+      "submit": {
+            "title": "确认并创建",
+            "description": "确认名称和分组后点击创建。只有创建成功，引导才会继续。"
+      },
+      "import": {
+            "title": "导入 CC Switch",
+            "description": "点击密钥卡片上的 CCS。平台会自动读取这把密钥可用的模型，不会因此调用模型或消耗 Token。"
+      },
+      "client": {
+            "title": "选择要使用的客户端",
+            "description": "选择 Codex、Claude Code 或其他可用客户端，再点击下一步。灰色选项表示当前分组不支持。"
+      },
+      "confirm": {
+            "title": "确认导入",
+            "description": "模型准备好后点击导入，按浏览器提示打开 CC Switch。请在 CC Switch 中确认配置并启用该供应商；尚未安装时可先关闭引导，查看文档。"
+      },
+      "docs": {
+            "title": "接下来，查看接入文档",
+            "description": "顶部文档入口提供客户端安装和使用说明。CC Switch 导入后记得启用对应供应商；遇到配置问题时，也可以随时从这里查阅。"
+      }
+},
     restartTour: '重新查看新手引导',
     dontShowAgain: '不再提示',
     dontShowAgainTitle: '永久关闭新手引导',
@@ -311,6 +358,10 @@ export default {
 
   // Payment System
   payment: {
+    checkout: {
+      badgeBonus: '赠 {percent}%',
+      badgeDiscount: '省 {percent}%',
+ title: '额度充值', description: '选择充值金额，补充账户可用额度', summary: '充值明细', orderHistory: '充值记录' },
     title: '充值/订阅',
     amountLabel: '充值金额',
     paymentAmount: '支付金额',
