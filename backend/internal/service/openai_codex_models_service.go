@@ -998,7 +998,7 @@ func buildCodexModelsManifest(
 		seen[modelID] = struct{}{}
 		descriptor := newConfiguredCodexModelDescriptor(metadataModelID)
 		descriptor.Slug = modelID
-		descriptor.Priority = configuredCodexModelPriority + len(modelIDs) - modelIndex
+		descriptor.Priority = configuredCodexModelPriority + modelIndex
 		descriptor.SupportsSearchTool = searchToolModels[modelID]
 		if metadata, ok := modelMetadata[modelID]; ok {
 			applyUpstreamModelMetadataToCodexDescriptor(&descriptor, metadata)

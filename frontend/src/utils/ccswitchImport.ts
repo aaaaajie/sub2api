@@ -149,16 +149,15 @@ export function buildCcSwitchImportDeeplink(input: CcSwitchImportDeeplinkInput):
   }
 
   if (config.app === 'codex') {
-    // Codex needs an explicit catalog URL for API-key providers. The versioned
-    // request is served as the Codex manifest by Sub2API, preserving group
-    // model order and metadata in the client's model picker.
+    // This endpoint always returns a Codex manifest, including on initial discovery.
+    const catalogUrl = config.endpoint.replace(/\/v1$/, '') + '/backend-api/codex/models'
     const codexConfig = `model_provider = "sub2api"
 ${config.model ? `model = ${JSON.stringify(config.model)}\n` : ''}web_search = "live"
 
 [model_providers.sub2api]
-name = "Sub2API"
+name = ${JSON.stringify(input.providerName)}
 base_url = ${JSON.stringify(config.endpoint)}
-model_catalog_url = ${JSON.stringify(`${config.endpoint}/models`)}
+model_catalog_url = ${JSON.stringify(catalogUrl)}
 wire_api = "responses"
 ${buildCodexApiKeyAuthConfig(input.apiKey)}
 `
