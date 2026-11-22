@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-dark-950">
+  <div class="app-shell min-h-screen bg-gray-50 dark:bg-dark-950">
     <!-- Admin navigation stays in the sidebar; user navigation uses the floating bar. -->
     <AppSidebar v-if="isAdminRoute" />
 

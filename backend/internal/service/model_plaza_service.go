@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-// PlazaOfficialPricing 模型广场展示用的官方参考价（USD per token），与计费同源：
-// LiteLLM → 内置兜底价卡 → 模型策略。字段为 nil 表示该项缺失（0 视为未配置）。
+// PlazaOfficialPricing 模型广场展示用的官方参考价，单位为每 token。
 type PlazaOfficialPricing struct {
+	Currency           string
 	InputPrice         *float64
 	OutputPrice        *float64
 	CacheWritePrice    *float64 // 5m 缓存写入（= LiteLLM cache_creation）
@@ -382,6 +382,7 @@ func (s *ModelPlazaService) lookupOfficialPricing(ctx context.Context, modelName
 	var result *PlazaOfficialPricing
 	if mp, err := s.billingService.GetModelPricing(modelName); err == nil && mp != nil {
 		result = &PlazaOfficialPricing{
+			Currency:        "USD",
 			InputPrice:      nonZeroPtr(mp.InputPricePerToken),
 			OutputPrice:     nonZeroPtr(mp.OutputPricePerToken),
 			CacheWritePrice: nonZeroPtr(mp.CacheCreationPricePerToken),
@@ -410,6 +411,17 @@ func (s *ModelPlazaService) lookupOfficialPricing(ctx context.Context, modelName
 		if result.InputPrice == nil && result.OutputPrice == nil && result.CacheWritePrice == nil &&
 			result.CacheWrite1hPrice == nil && result.CacheWrite12hPrice == nil && result.CacheReadPrice == nil && len(result.Intervals) == 0 {
 			result = nil
+		}
+	}
+	if result != nil && strings.EqualFold(modelName, "deepseek-v4.1-flash") {
+		// DeepSeek China API list prices. These are display references only.
+		// https://api-docs.deepseek.com/zh-cn/quick_start/pricing/
+		result = &PlazaOfficialPricing{
+			Currency:       "CNY",
+			InputPrice:     nonZeroPtr(1.0 / 1_000_000),
+			OutputPrice:    nonZeroPtr(4.0 / 1_000_000),
+			CacheReadPrice: nonZeroPtr(0.02 / 1_000_000),
+			TimePricing:    result.TimePricing,
 		}
 	}
 	memo[modelName] = result

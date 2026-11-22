@@ -181,6 +181,7 @@ export interface ProviderInstance {
 // ==================== Request / Response ====================
 
 export interface CreateOrderRequest {
+  expected_recharge_multiplier?: number
   amount: number
   payment_type: string
   order_type: string

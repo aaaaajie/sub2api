@@ -769,8 +769,10 @@ export default {
         minAmount: '最低金额',
         maxAmount: '最高金额',
         dailyLimit: '每日限额',
-        balanceRechargeMultiplier: '余额充值倍率',
-        balanceRechargeMultiplierHint: '用户每支付 1 CNY 可获得多少 USD 余额（最多 6 位小数，可按实时汇率配置）',
+        autoRechargeExchange: '自动更新充值汇率',
+        autoRechargeExchangeHint: '按中国外汇交易中心公布的 USD/CNY 中间价换算人民币充值。每笔订单创建时锁定到账金额。',
+        balanceRechargeMultiplier: '固定充值倍率',
+        balanceRechargeMultiplierHint: '关闭自动更新时使用。每支付 1 CNY 到账的美元额度（最多 6 位小数，须小于 1）。',
         balanceRechargePreview: '预览：1 CNY = {usd} USD',
         subscriptionUsdToCnyRate: '订阅 CNY 换算汇率',
         subscriptionUsdToCnyRateHint:

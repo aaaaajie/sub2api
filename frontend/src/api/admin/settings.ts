@@ -670,6 +670,7 @@ export interface SystemSettings {
   payment_max_pending_orders: number;
   payment_enabled_types: string[];
   payment_balance_disabled: boolean;
+  payment_auto_recharge_exchange: boolean;
   payment_balance_recharge_multiplier: number;
   payment_subscription_usd_to_cny_rate: number;
   payment_recharge_fee_rate: number;
@@ -992,6 +993,7 @@ export interface UpdateSettingsRequest {
   payment_max_pending_orders?: number;
   payment_enabled_types?: string[];
   payment_balance_disabled?: boolean;
+  payment_auto_recharge_exchange?: boolean;
   payment_balance_recharge_multiplier?: number;
   payment_subscription_usd_to_cny_rate?: number;
   payment_recharge_fee_rate?: number;

@@ -767,6 +767,7 @@ export default {
       paidPrice: '实付价格(折后)',
       officialPrice: '官方价格',
       rate: '折扣倍率',
+      domesticOfficialPrice: '国内官方价（折合美元）',
       unitPerMillion: '$ / 1M token',
       perUnitRequest: '/ 次',
       perUnitImage: '/ 张',

@@ -69,9 +69,22 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		limitAmount = plan.Price
 	} else if req.OrderType == payment.OrderTypeBalance {
 		// 阈值按支付金额命中。赠金模式：到账 = 基数 + 赠送；折扣模式：到账 = 基数，实付基数按折扣减少。
+		multiplier, err := s.configService.RechargeMultiplier(ctx, cfg, methodCurrency)
+		if err != nil {
+			return nil, err
+		}
+		if req.ExpectedRechargeMultiplier != nil && *req.ExpectedRechargeMultiplier != multiplier {
+			return nil, infraerrors.Conflict("RECHARGE_EXCHANGE_CHANGED", "Recharge exchange rate changed. Review the updated amount and try again")
+		}
+		quoteConfig := *cfg
+		quoteConfig.BalanceRechargeMultiplier = multiplier
+		cfg = &quoteConfig
 		quote := quoteRechargeBonus(cfg, req.Amount, methodCurrency)
 		limitAmount = quote.PayBase
 		bonusAmount = quote.Bonus
+		if quote.Credited <= 0 {
+			return nil, infraerrors.BadRequest("INVALID_AMOUNT", "Recharge amount is too small to credit a USD balance")
+		}
 		orderAmount = quote.Credited
 	}
 	payAmountStr, payAmount, err := calculateCreateOrderPayAmountForOrderType(limitAmount, feeRate, methodCurrency, req.OrderType, cfg.SubscriptionUSDToCNYRate)
@@ -90,6 +103,9 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		selectedCurrency = paymentProviderConfigCurrency(sel.ProviderKey, sel.Config)
 	}
 	if selectedCurrency != methodCurrency {
+		if req.OrderType == payment.OrderTypeBalance {
+			return nil, infraerrors.Conflict("RECHARGE_EXCHANGE_CHANGED", "Payment currency changed. Review the updated amount and try again")
+		}
 		payAmountStr, payAmount, err = calculateCreateOrderPayAmountForOrderType(limitAmount, feeRate, selectedCurrency, req.OrderType, cfg.SubscriptionUSDToCNYRate)
 		if err != nil {
 			return nil, err
@@ -215,6 +231,9 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 		b.SetProviderKey(selectedProviderKey)
 	}
 	if providerSnapshot != nil {
+		if req.OrderType == payment.OrderTypeBalance {
+			providerSnapshot["recharge_multiplier"] = cfg.BalanceRechargeMultiplier
+		}
 		b.SetProviderSnapshot(providerSnapshot)
 	}
 	if plan != nil {

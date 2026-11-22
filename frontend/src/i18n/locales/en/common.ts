@@ -169,6 +169,7 @@ export default {
     dataDashboard: 'Data Dashboard',
     myInfo: 'My Info',
     primaryNavigation: 'Primary navigation',
+    adminPortal: 'Admin',
     announcements: 'Announcements',
     apiKeys: 'API Keys',
     batchImage: 'Batch Images',

@@ -1,3 +1,5 @@
+import { syncThemeColor } from './theme-meta'
+
 type ViewTransitionHandle = {
   finished: Promise<void>
 }
@@ -21,6 +23,7 @@ export function toggleThemeWithReveal(
     applied = true
     root.classList.toggle('dark', nextDark)
     localStorage.setItem('theme', nextDark ? 'dark' : 'light')
+    syncThemeColor(nextDark)
     updateLocalState(nextDark)
   }
 

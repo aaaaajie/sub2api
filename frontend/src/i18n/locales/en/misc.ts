@@ -453,7 +453,7 @@ export default {
     amountTooLow: 'Minimum amount is {min}',
     amountTooHigh: 'Maximum amount is {max}',
     amountNoMethod: 'No payment method available for this amount',
-    rechargeRatePreview: 'Current rate: 1 {currency} = {usd} USD',
+    rechargeRatePreview: 'Recharge rate: 1 USD ≈ {cny} CNY',
     refundReason: 'Refund Reason',
     refundReasonPlaceholder: 'Please describe your refund reason',
     stripeLoadFailed: 'Failed to load payment component. Please refresh and try again.',
@@ -480,6 +480,8 @@ export default {
       // Structured error codes (reason strings from backend ApplicationError)
       PAYMENT_DISABLED: 'Payment system is disabled.',
       USER_INACTIVE: 'Your account is disabled.',
+      RECHARGE_EXCHANGE_UNAVAILABLE: 'The recharge exchange rate is unavailable. Try again later.',
+      RECHARGE_EXCHANGE_CHANGED: 'The recharge rate changed. Review the updated credited amount and place the order again.',
       BALANCE_PAYMENT_DISABLED: 'Balance recharge has been disabled.',
       INVALID_AMOUNT: 'Invalid amount.',
       INVALID_INPUT: 'Invalid request.',

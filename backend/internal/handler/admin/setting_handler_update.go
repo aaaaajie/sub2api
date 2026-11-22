@@ -309,6 +309,7 @@ type UpdateSettingsRequest struct {
 	PaymentMaxPendingOrders          *int     `json:"payment_max_pending_orders"`
 	PaymentEnabledTypes              []string `json:"payment_enabled_types"`
 	PaymentBalanceDisabled           *bool    `json:"payment_balance_disabled"`
+	PaymentAutoRechargeExchange      *bool    `json:"payment_auto_recharge_exchange"`
 	PaymentBalanceRechargeMultiplier *float64 `json:"payment_balance_recharge_multiplier"`
 	PaymentSubscriptionUSDToCNYRate  *float64 `json:"payment_subscription_usd_to_cny_rate"`
 	PaymentRechargeFeeRate           *float64 `json:"payment_recharge_fee_rate"`
@@ -2129,6 +2130,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			MaxPendingOrders:              req.PaymentMaxPendingOrders,
 			EnabledTypes:                  req.PaymentEnabledTypes,
 			BalanceDisabled:               req.PaymentBalanceDisabled,
+			AutoRechargeExchange:          req.PaymentAutoRechargeExchange,
 			BalanceRechargeMultiplier:     req.PaymentBalanceRechargeMultiplier,
 			SubscriptionUSDToCNYRate:      req.PaymentSubscriptionUSDToCNYRate,
 			RechargeFeeRate:               req.PaymentRechargeFeeRate,
@@ -2411,6 +2413,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		PaymentMaxPendingOrders:                                updatedPaymentCfg.MaxPendingOrders,
 		PaymentEnabledTypes:                                    updatedPaymentCfg.EnabledTypes,
 		PaymentBalanceDisabled:                                 updatedPaymentCfg.BalanceDisabled,
+		PaymentAutoRechargeExchange:                            updatedPaymentCfg.AutoRechargeExchange,
 		PaymentBalanceRechargeMultiplier:                       updatedPaymentCfg.BalanceRechargeMultiplier,
 		PaymentSubscriptionUSDToCNYRate:                        updatedPaymentCfg.SubscriptionUSDToCNYRate,
 		PaymentRechargeFeeRate:                                 updatedPaymentCfg.RechargeFeeRate,
@@ -2491,7 +2494,7 @@ func hasPaymentFields(req UpdateSettingsRequest) bool {
 		req.PaymentMaxAmount != nil || req.PaymentDailyLimit != nil ||
 		req.PaymentOrderTimeoutMin != nil || req.PaymentMaxPendingOrders != nil ||
 		req.PaymentEnabledTypes != nil || req.PaymentBalanceDisabled != nil ||
-		req.PaymentBalanceRechargeMultiplier != nil || req.PaymentSubscriptionUSDToCNYRate != nil ||
+		req.PaymentAutoRechargeExchange != nil || req.PaymentBalanceRechargeMultiplier != nil || req.PaymentSubscriptionUSDToCNYRate != nil ||
 		req.PaymentRechargeFeeRate != nil ||
 		req.PaymentRechargeBonusTiers != nil || req.PaymentRechargeBonusMode != nil || req.PaymentRechargeBonusNotice != nil ||
 		req.PaymentLoadBalanceStrat != nil || req.PaymentProductNamePrefix != nil ||

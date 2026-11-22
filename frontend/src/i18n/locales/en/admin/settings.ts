@@ -774,8 +774,10 @@ export default {
         minAmount: 'Minimum Amount',
         maxAmount: 'Maximum Amount',
         dailyLimit: 'Daily Limit',
-        balanceRechargeMultiplier: 'Balance Recharge Multiplier',
-        balanceRechargeMultiplierHint: 'How many USD balance the user receives for each 1 CNY paid (up to 6 decimal places, e.g. for live FX rates)',
+        autoRechargeExchange: 'Automatically update recharge exchange rates',
+        autoRechargeExchangeHint: 'Use the USD/CNY central parity rate published by CFETS for CNY recharges. The credited amount is locked when the order is created.',
+        balanceRechargeMultiplier: 'Fixed recharge multiplier',
+        balanceRechargeMultiplierHint: 'Used when automatic updates are off. USD credit per 1 CNY paid (up to 6 decimal places, below 1).',
         balanceRechargePreview: 'Preview: 1 CNY = {usd} USD',
         subscriptionUsdToCnyRate: 'Subscription USD to CNY Rate',
         subscriptionUsdToCnyRateHint:

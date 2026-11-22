@@ -7990,7 +7990,14 @@
                       :placeholder="t('admin.settings.payment.noLimit')"
                     />
                   </div>
-                  <div>
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="input-label">{{ t("admin.settings.payment.autoRechargeExchange") }}</p>
+                      <p class="mt-0.5 text-xs text-gray-400">{{ t("admin.settings.payment.autoRechargeExchangeHint") }}</p>
+                    </div>
+                    <Toggle v-model="form.payment_auto_recharge_exchange" />
+                  </div>
+                  <div v-if="!form.payment_auto_recharge_exchange">
                     <label class="input-label">{{
                       t("admin.settings.payment.balanceRechargeMultiplier")
                     }}</label>
@@ -8005,6 +8012,7 @@
                       type="number"
                       step="0.000001"
                       min="0.000001"
+                      max="0.999999"
                       class="input"
                     />
                     <p class="mt-0.5 text-xs text-gray-400">
@@ -8015,6 +8023,7 @@
                       }}
                     </p>
                     <p
+                      v-if="form.payment_balance_recharge_multiplier > 0 && form.payment_balance_recharge_multiplier < 1"
                       class="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400"
                     >
                       {{
@@ -9756,6 +9765,7 @@ const form = reactive<SettingsForm>({
   payment_max_pending_orders: 3,
   payment_order_timeout_minutes: 30,
   payment_balance_disabled: false,
+  payment_auto_recharge_exchange: true,
   payment_balance_recharge_multiplier: 1,
   payment_subscription_usd_to_cny_rate: 0,
   payment_recharge_fee_rate: 0,
@@ -11639,6 +11649,7 @@ async function saveSettings() {
       payment_order_timeout_minutes:
         Number(form.payment_order_timeout_minutes) || 0,
       payment_balance_disabled: form.payment_balance_disabled,
+      payment_auto_recharge_exchange: form.payment_auto_recharge_exchange,
       payment_balance_recharge_multiplier:
         Number(form.payment_balance_recharge_multiplier) || 1,
       payment_subscription_usd_to_cny_rate:

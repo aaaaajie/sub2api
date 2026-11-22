@@ -763,6 +763,7 @@ export default {
       paidPrice: 'Your Price (Discounted)',
       officialPrice: 'Official Price',
       rate: 'Rate',
+      domesticOfficialPrice: 'Official China API Price (USD equivalent)',
       unitPerMillion: '$ / 1M tokens',
       perUnitRequest: '/ request',
       perUnitImage: '/ image',

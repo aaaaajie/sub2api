@@ -477,7 +477,7 @@ export default {
     amountTooLow: '最低金额为 {min}',
     amountTooHigh: '最高金额为 {max}',
     amountNoMethod: '该金额没有可用的支付方式',
-    rechargeRatePreview: '当前倍率：1 {currency} = {usd} USD',
+    rechargeRatePreview: '充值汇率：1 USD ≈ {cny} CNY',
     refundReason: '退款原因',
     refundReasonPlaceholder: '请描述您的退款原因',
     stripeLoadFailed: '支付组件加载失败，请刷新页面重试',
@@ -504,6 +504,8 @@ export default {
       // Structured error codes (reason strings from backend ApplicationError)
       PAYMENT_DISABLED: '支付系统已关闭',
       USER_INACTIVE: '账号已被禁用',
+      RECHARGE_EXCHANGE_UNAVAILABLE: '当前无法取得充值汇率，请稍后重试。',
+      RECHARGE_EXCHANGE_CHANGED: '充值汇率已更新，请确认新的到账金额后重新下单。',
       BALANCE_PAYMENT_DISABLED: '余额充值功能已关闭',
       INVALID_AMOUNT: '金额无效',
       INVALID_INPUT: '参数有误',

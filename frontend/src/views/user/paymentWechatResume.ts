@@ -9,6 +9,7 @@ export interface ParsedWechatResumeRoute {
   planId?: number
   openid?: string
   wechatResumeToken?: string
+  expectedRechargeMultiplier?: number
 }
 
 function readQueryString(query: LocationQuery, key: string): string {
@@ -44,12 +45,17 @@ export function parseWechatResumeRoute(
     ? 'subscription'
     : 'balance'
 
+  const rawAmount = Number.parseFloat(readQueryString(query, 'amount'))
+  const rawMultiplier = Number.parseFloat(readQueryString(query, 'expected_recharge_multiplier'))
+  const expectedRechargeMultiplier = Number.isFinite(rawMultiplier) && rawMultiplier > 0 ? rawMultiplier : undefined
+
   if (wechatResumeToken) {
     return {
       wechatResumeToken,
       paymentType,
       orderType,
-      orderAmount: 0,
+      orderAmount: Number.isFinite(rawAmount) && rawAmount > 0 ? rawAmount : 0,
+      expectedRechargeMultiplier,
       planId: hasPlanId ? planId : undefined,
     }
   }
@@ -59,7 +65,6 @@ export function parseWechatResumeRoute(
     return null
   }
 
-  const rawAmount = Number.parseFloat(readQueryString(query, 'amount'))
   const orderAmount = Number.isFinite(rawAmount) && rawAmount > 0
     ? rawAmount
     : (orderType === 'subscription'
@@ -71,6 +76,7 @@ export function parseWechatResumeRoute(
     paymentType,
     orderType,
     orderAmount,
+    expectedRechargeMultiplier,
     planId: hasPlanId ? planId : undefined,
   }
 }
@@ -84,6 +90,7 @@ export function stripWechatResumeQuery(query: LocationQuery): LocationQueryRaw {
   delete nextQuery.scope
   delete nextQuery.payment_type
   delete nextQuery.amount
+  delete nextQuery.expected_recharge_multiplier
   delete nextQuery.order_type
   delete nextQuery.plan_id
   return nextQuery

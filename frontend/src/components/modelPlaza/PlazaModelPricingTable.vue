@@ -32,7 +32,7 @@
             class="border-l border-gray-100 pt-2 text-center dark:border-dark-700/60"
           >
             <div class="border-b border-gray-200 pb-2 text-gray-400 dark:border-dark-600 dark:text-dark-500">
-              {{ t('modelPlaza.table.officialPrice') }}
+              {{ t(domesticReference ? 'modelPlaza.table.domesticOfficialPrice' : 'modelPlaza.table.officialPrice') }}
               <span class="ml-1 normal-case font-normal text-gray-400 dark:text-dark-500">{{ t('modelPlaza.table.unitPerMillion') }}</span>
             </div>
           </th>
@@ -295,7 +295,12 @@
             class="border-l border-gray-100 py-2.5 pl-3 pr-5 text-right align-middle font-mono text-xs dark:border-dark-700/60"
           >
             <span
-              v-if="period"
+              v-if="m.official_pricing?.source_currency === 'CNY'"
+              class="font-bold text-primary-600 dark:text-primary-400"
+              >{{ domesticDiscount(m, period) }}</span
+            >
+            <span
+              v-else-if="period"
               class="font-bold text-primary-600 dark:text-primary-400"
               :title="t('modelPlaza.table.timePricingRateHint', { rate: effectiveRate, multiplier: period.multiplier })"
               >{{ periodRate(period) }}x</span
@@ -319,6 +324,7 @@
 
 <script setup lang="ts">
 import OfficialTokenPrice from './OfficialTokenPrice.vue'
+import { officialTimeMultiplier } from './officialPricing'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatScaled, resolveIntervalPrices } from '@/utils/pricing'
@@ -375,6 +381,8 @@ const PER_MILLION = 1_000_000
 
 // 模型广场沿用后端按分组设置生成的模型顺序。
 const sortedModels = computed(() => props.models)
+const domesticReference = computed(() => props.models.length > 0 &&
+  props.models.every(model => model.official_pricing?.source_currency === 'CNY'))
 
 const effectiveRate = computed(() => props.userRateMultiplier ?? props.rateMultiplier)
 const hasCustomRate = computed(
@@ -418,7 +426,27 @@ function periodRate(period: PlazaTimePricingPeriod): number {
   return Math.round(effectiveRate.value * period.multiplier * 1000) / 1000
 }
 
-/** 实付价 = 渠道单价 × 生效倍率(时段行再乘时段倍率),按 $/1M token 展示。 */
+function domesticDiscount(model: PlazaModel, period: PlazaTimePricingPeriod | null): string {
+  const reference = model.official_pricing
+  const officialMultiplier = officialTimeMultiplier(reference?.time_pricing, model.time_pricing, period)
+  if (!reference || !model.pricing || !officialMultiplier || props.peakWindow ||
+      tokenIntervals(model).length || officialIntervals(model).length) return '–'
+
+  const rate = period ? periodRate(period) : effectiveRate.value
+  const ratios = (['input_price', 'output_price', 'cache_read_price'] as const).flatMap(key => {
+    const price = model.pricing?.[key]
+    const official = reference[key]
+    return price != null && official != null && official > 0
+      ? [price * rate / (official * officialMultiplier)]
+      : []
+  })
+  const ratio = ratios[0]
+  return ratios.length === 3 && ratios.every(value => Math.abs(value - ratio) < 1e-9)
+    ? `${Number(ratio.toFixed(3))}x`
+    : '–'
+}
+
+/** 实付价 = 渠道单价 × 生效倍率(时段行再乘时段倍率),按每百万 token 的余额扣减展示。 */
 function paidPerMillion(value: number | null | undefined, period: PlazaTimePricingPeriod | null = null): string {
   if (value == null) return '-'
   const rate = period ? periodRate(period) : effectiveRate.value
