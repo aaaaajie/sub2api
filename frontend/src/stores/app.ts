@@ -296,6 +296,8 @@ export const useAppStore = defineStore('app', () => {
     cachedPublicSettings.value = config
     siteName.value = config.site_name || 'Sub2API'
     siteLogo.value = config.site_logo || ''
+    const appleAppTitle = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]')
+    if (appleAppTitle) appleAppTitle.content = siteName.value
     siteVersion.value = config.version || ''
     contactInfo.value = config.contact_info || ''
     apiBaseUrl.value = config.api_base_url || ''

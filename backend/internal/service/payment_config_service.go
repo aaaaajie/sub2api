@@ -15,16 +15,17 @@ import (
 )
 
 const (
-	SettingPaymentEnabled      = "payment_enabled"
-	SettingMinRechargeAmount   = "MIN_RECHARGE_AMOUNT"
-	SettingMaxRechargeAmount   = "MAX_RECHARGE_AMOUNT"
-	SettingDailyRechargeLimit  = "DAILY_RECHARGE_LIMIT"
-	SettingOrderTimeoutMinutes = "ORDER_TIMEOUT_MINUTES"
-	SettingMaxPendingOrders    = "MAX_PENDING_ORDERS"
-	SettingEnabledPaymentTypes = "ENABLED_PAYMENT_TYPES"
-	SettingLoadBalanceStrategy = "LOAD_BALANCE_STRATEGY"
-	SettingBalancePayDisabled  = "BALANCE_PAYMENT_DISABLED"
-	SettingBalanceRechargeMult = "BALANCE_RECHARGE_MULTIPLIER"
+	SettingPaymentEnabled       = "payment_enabled"
+	SettingMinRechargeAmount    = "MIN_RECHARGE_AMOUNT"
+	SettingMaxRechargeAmount    = "MAX_RECHARGE_AMOUNT"
+	SettingDailyRechargeLimit   = "DAILY_RECHARGE_LIMIT"
+	SettingOrderTimeoutMinutes  = "ORDER_TIMEOUT_MINUTES"
+	SettingMaxPendingOrders     = "MAX_PENDING_ORDERS"
+	SettingEnabledPaymentTypes  = "ENABLED_PAYMENT_TYPES"
+	SettingLoadBalanceStrategy  = "LOAD_BALANCE_STRATEGY"
+	SettingBalancePayDisabled   = "BALANCE_PAYMENT_DISABLED"
+	SettingBalanceRechargeMult  = "BALANCE_RECHARGE_MULTIPLIER"
+	SettingAutoRechargeExchange = "AUTO_RECHARGE_EXCHANGE"
 	// SettingSubscriptionUSDToCNYRate 是订阅 CNY 换算汇率（1 USD = X CNY）。
 	// 0/未配置 = 关闭换算（订阅按 price 数值直付），显式配置后 CNY 通道订阅按 price × rate 收款。
 	SettingSubscriptionUSDToCNYRate      = "SUBSCRIPTION_USD_TO_CNY_RATE"
@@ -58,6 +59,7 @@ type PaymentConfig struct {
 	MaxPendingOrders          int      `json:"max_pending_orders"`
 	EnabledTypes              []string `json:"enabled_payment_types"`
 	BalanceDisabled           bool     `json:"balance_disabled"`
+	AutoRechargeExchange      bool     `json:"auto_recharge_exchange"`
 	BalanceRechargeMultiplier float64  `json:"balance_recharge_multiplier"`
 	// SubscriptionUSDToCNYRate 为 0 时订阅换算关闭（兼容存量行为）。
 	SubscriptionUSDToCNYRate float64 `json:"subscription_usd_to_cny_rate"`
@@ -98,6 +100,7 @@ type UpdatePaymentConfigRequest struct {
 	MaxPendingOrders          *int     `json:"max_pending_orders"`
 	EnabledTypes              []string `json:"enabled_payment_types"`
 	BalanceDisabled           *bool    `json:"balance_disabled"`
+	AutoRechargeExchange      *bool    `json:"auto_recharge_exchange"`
 	BalanceRechargeMultiplier *float64 `json:"balance_recharge_multiplier"`
 	SubscriptionUSDToCNYRate  *float64 `json:"subscription_usd_to_cny_rate"`
 	RechargeFeeRate           *float64 `json:"recharge_fee_rate"`
@@ -205,9 +208,10 @@ type UpdatePlanRequest struct {
 // PaymentConfigService manages payment configuration and CRUD for
 // provider instances, channels, and subscription plans.
 type PaymentConfigService struct {
-	entClient     *dbent.Client
-	settingRepo   SettingRepository
-	encryptionKey []byte
+	entClient        *dbent.Client
+	settingRepo      SettingRepository
+	encryptionKey    []byte
+	rechargeExchange rechargeExchangeCache
 }
 
 // NewPaymentConfigService creates a new PaymentConfigService.
@@ -229,7 +233,7 @@ func (s *PaymentConfigService) GetPaymentConfig(ctx context.Context) (*PaymentCo
 	keys := []string{
 		SettingPaymentEnabled, SettingMinRechargeAmount, SettingMaxRechargeAmount,
 		SettingDailyRechargeLimit, SettingOrderTimeoutMinutes, SettingMaxPendingOrders,
-		SettingEnabledPaymentTypes, SettingBalancePayDisabled, SettingBalanceRechargeMult, SettingSubscriptionUSDToCNYRate, SettingRechargeFeeRate, SettingLoadBalanceStrategy,
+		SettingEnabledPaymentTypes, SettingBalancePayDisabled, SettingBalanceRechargeMult, SettingAutoRechargeExchange, SettingSubscriptionUSDToCNYRate, SettingRechargeFeeRate, SettingLoadBalanceStrategy,
 		SettingRechargeBonusTiers, SettingRechargeBonusMode, SettingRechargeBonusNotice,
 		SettingProductNamePrefix, SettingProductNameSuffix,
 		SettingHelpImageURL, SettingHelpText,
@@ -258,6 +262,7 @@ func (s *PaymentConfigService) parsePaymentConfig(vals map[string]string) *Payme
 		OrderTimeoutMin:           pcParseInt(vals[SettingOrderTimeoutMinutes], defaultOrderTimeoutMin),
 		MaxPendingOrders:          pcParseInt(vals[SettingMaxPendingOrders], defaultMaxPendingOrders),
 		BalanceDisabled:           vals[SettingBalancePayDisabled] == "true",
+		AutoRechargeExchange:      vals[SettingAutoRechargeExchange] != "false",
 		BalanceRechargeMultiplier: normalizeBalanceRechargeMultiplier(pcParseFloat(vals[SettingBalanceRechargeMult], defaultBalanceRechargeMultiplier)),
 		SubscriptionUSDToCNYRate:  normalizeSubscriptionUSDToCNYRate(pcParseFloat(vals[SettingSubscriptionUSDToCNYRate], 0)),
 		RechargeFeeRate:           pcParseFloat(vals[SettingRechargeFeeRate], 0),
@@ -396,6 +401,9 @@ func (s *PaymentConfigService) UpdatePaymentConfig(ctx context.Context, req Upda
 	}
 	if req.BalanceDisabled != nil {
 		m[SettingBalancePayDisabled] = formatBoolOrEmpty(req.BalanceDisabled)
+	}
+	if req.AutoRechargeExchange != nil {
+		m[SettingAutoRechargeExchange] = strconv.FormatBool(*req.AutoRechargeExchange)
 	}
 	if req.BalanceRechargeMultiplier != nil {
 		m[SettingBalanceRechargeMult] = formatBalanceRechargeMultiplier(req.BalanceRechargeMultiplier)

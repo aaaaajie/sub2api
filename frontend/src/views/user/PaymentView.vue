@@ -51,9 +51,10 @@
               <section class="recharge-selection">
                 <div v-if="renderedBonusNotice" class="recharge-notice" data-testid="recharge-bonus-notice" v-html="renderedBonusNotice"></div>
                 <AmountInput v-model="amount" :amounts="[10, 20, 50, 100, 200, 500]"
-                  :min="globalMinAmount" :max="globalMaxAmount" :bonus-tiers="rechargeBonusTiers" :bonus-mode="rechargeBonusMode"
+                  :min="globalMinAmount" :max="globalMaxAmount" :bonus-tiers="rechargeRateAvailable ? rechargeBonusTiers : []" :bonus-mode="rechargeBonusMode"
                   :multiplier="balanceRechargeMultiplier" :currency="selectedCurrency" />
-                <p v-if="amountError" class="mt-3 text-xs text-amber-600 dark:text-amber-300" role="alert">{{ amountError }}</p>
+                <p v-if="!rechargeRateAvailable" class="mt-3 text-xs text-amber-600 dark:text-amber-300" role="alert">{{ t('payment.errors.RECHARGE_EXCHANGE_UNAVAILABLE') }}</p>
+                <p v-else-if="amountError" class="mt-3 text-xs text-amber-600 dark:text-amber-300" role="alert">{{ amountError }}</p>
                 <div class="recharge-methods">
                   <PaymentMethodSelector :methods="methodOptions" :selected="selectedMethod" @select="selectedMethod = $event" />
                 </div>
@@ -62,19 +63,19 @@
                 <h2>{{ t('payment.checkout.summary') }}</h2>
                 <div class="recharge-credit" data-testid="recharge-credited-row">
                   <span>{{ t('payment.creditedBalance') }} <small>USD</small></span>
-                  <strong>{{ validAmount > 0 ? '$' + creditedAmount.toFixed(2) : '—' }}</strong>
+                  <strong>{{ validAmount > 0 && rechargeRateAvailable ? '$' + creditedAmount.toFixed(2) : '—' }}</strong>
                 </div>
                 <dl class="recharge-breakdown">
                   <div><dt>{{ t('payment.paymentAmount') }}</dt><dd>{{ validAmount > 0 ? formatSelectedPaymentAmount(validAmount) : '—' }}</dd></div>
-                  <div v-if="discountAmount > 0" data-testid="recharge-discount-row"><dt>{{ t('payment.rechargeBonus.discountLabelWithPercent', { percent: formatRechargeBonusNumber(bonusQuote.percent) }) }}</dt><dd class="recharge-benefit">-{{ formatSelectedPaymentAmount(discountAmount) }}</dd></div>
-                  <div v-if="showBonusRow" data-testid="recharge-bonus-row"><dt>{{ t('payment.rechargeBonus.amountLabelWithPercent', { percent: formatRechargeBonusNumber(bonusQuote.percent) }) }}</dt><dd class="recharge-benefit">+${{ bonusQuote.bonus.toFixed(2) }}</dd></div>
+                  <div v-if="rechargeRateAvailable && discountAmount > 0" data-testid="recharge-discount-row"><dt>{{ t('payment.rechargeBonus.discountLabelWithPercent', { percent: formatRechargeBonusNumber(bonusQuote.percent) }) }}</dt><dd class="recharge-benefit">-{{ formatSelectedPaymentAmount(discountAmount) }}</dd></div>
+                  <div v-if="rechargeRateAvailable && showBonusRow" data-testid="recharge-bonus-row"><dt>{{ t('payment.rechargeBonus.amountLabelWithPercent', { percent: formatRechargeBonusNumber(bonusQuote.percent) }) }}</dt><dd class="recharge-benefit">+${{ bonusQuote.bonus.toFixed(2) }}</dd></div>
                   <div v-if="feeRate > 0 && validAmount > 0"><dt>{{ t('payment.fee') }} ({{ feeRate }}%)</dt><dd>{{ formatSelectedPaymentAmount(feeAmount) }}</dd></div>
                 </dl>
-                <p v-if="balanceRechargeMultiplier !== 1 && validAmount > 0" class="recharge-rate">{{ t('payment.rechargeRatePreview', { currency: selectedCurrency, usd: formatBalanceRechargeMultiplier(balanceRechargeMultiplier) }) }}</p>
-                <div class="recharge-total"><span>{{ t('payment.actualPay') }} <small>{{ selectedCurrency }}</small></span><strong>{{ validAmount > 0 ? formatSelectedPaymentAmount(totalAmount) : '—' }}</strong></div>
+                <p v-if="rechargeRateAvailable && selectedCurrency === 'CNY' && validAmount > 0" class="recharge-rate">{{ t('payment.rechargeRatePreview', { cny: formatBalanceRechargeMultiplier(1 / balanceRechargeMultiplier) }) }}</p>
+                <div class="recharge-total"><span>{{ t('payment.actualPay') }} <small>{{ selectedCurrency }}</small></span><strong>{{ validAmount > 0 && rechargeRateAvailable ? formatSelectedPaymentAmount(totalAmount) : '—' }}</strong></div>
                 <button type="button" class="btn btn-primary recharge-submit" :disabled="!canSubmit || submitting" @click="handleSubmitRecharge">
                   <span v-if="submitting" class="inline-flex items-center gap-2"><span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"></span>{{ t('common.processing') }}</span>
-                  <span v-else class="inline-flex items-center gap-2">{{ t('payment.createOrder') }}<span v-if="validAmount > 0">{{ formatSelectedPaymentAmount(totalAmount) }}</span></span>
+                  <span v-else class="inline-flex items-center gap-2">{{ t('payment.createOrder') }}<span v-if="validAmount > 0 && rechargeRateAvailable">{{ formatSelectedPaymentAmount(totalAmount) }}</span></span>
                 </button>
               </aside>
             </div>
@@ -325,6 +326,7 @@ const paymentPhase = ref<'select' | 'paying'>('select')
 interface CreateOrderOptions {
   openid?: string
   wechatResumeToken?: string
+  expectedRechargeMultiplier?: number
   paymentType?: string
   isResume?: boolean
   mobileQrFallbackAttempted?: boolean
@@ -433,7 +435,7 @@ async function redirectToPaymentResult(state: PaymentRecoverySnapshot): Promise<
 
 function buildWechatOAuthAuthorizeUrl(
   authorizeUrl: string,
-  context: { paymentType: string; orderType: OrderType; planId?: number; orderAmount: number },
+  context: { paymentType: string; orderType: OrderType; planId?: number; orderAmount: number; expectedRechargeMultiplier?: number },
 ): string {
   const normalizedUrl = authorizeUrl.trim()
   if (!normalizedUrl || typeof window === 'undefined') {
@@ -459,6 +461,10 @@ function buildWechatOAuthAuthorizeUrl(
       redirectUrl.searchParams.set('amount', String(context.orderAmount))
     } else {
       redirectUrl.searchParams.delete('amount')
+    }
+
+    if (context.expectedRechargeMultiplier !== undefined) {
+      redirectUrl.searchParams.set('expected_recharge_multiplier', String(context.expectedRechargeMultiplier))
     }
 
     targetUrl.searchParams.set('redirect', `${redirectUrl.pathname}${redirectUrl.search}`)
@@ -494,7 +500,7 @@ function onPaymentSettled() {
 // All checkout data from single API call
 const checkout = ref<CheckoutInfoResponse>({
   methods: {}, global_min: 0, global_max: 0,
-  plans: [], balance_disabled: false, balance_recharge_multiplier: 1, subscription_usd_to_cny_rate: 0, recharge_fee_rate: 0, help_text: '', help_image_url: '', stripe_publishable_key: '',
+  plans: [], balance_disabled: false, balance_recharge_multiplier: 0, subscription_usd_to_cny_rate: 0, recharge_fee_rate: 0, help_text: '', help_image_url: '', stripe_publishable_key: '',
   recharge_bonus_tiers: [], recharge_bonus_mode: 'bonus', recharge_bonus_notice: '',
 })
 
@@ -532,10 +538,6 @@ watch(tabs, (available) => {
 const visibleMethods = computed(() => getVisibleMethods(checkout.value.methods))
 const enabledMethods = computed(() => Object.keys(visibleMethods.value))
 const validAmount = computed(() => amount.value ?? 0)
-const balanceRechargeMultiplier = computed(() => {
-  const multiplier = checkout.value.balance_recharge_multiplier
-  return Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1
-})
 // 订阅 CNY 换算汇率（1 USD = X CNY）。0 = 未配置，订阅保持 price 直付（与后端 opt-in 条件严格镜像）。
 const subscriptionUsdToCnyRate = computed(() => {
   const rate = checkout.value.subscription_usd_to_cny_rate
@@ -578,6 +580,12 @@ const globalMaxAmount = computed(() => {
 // Selected method's limits (for validation and error messages)
 const selectedLimit = computed(() => visibleMethods.value[selectedMethod.value])
 const selectedCurrency = computed(() => normalizePaymentCurrency(selectedLimit.value?.currency))
+function rechargeMultiplierFor(currency: string): number {
+  if (currency === 'USD') return 1
+  return currency === 'CNY' ? checkout.value.balance_recharge_multiplier : 0
+}
+const balanceRechargeMultiplier = computed(() => rechargeMultiplierFor(selectedCurrency.value))
+const rechargeRateAvailable = computed(() => balanceRechargeMultiplier.value > 0)
 const localeCode = computed(() => {
   const raw = i18n.locale as unknown
   if (typeof raw === 'string') return raw
@@ -675,7 +683,7 @@ const amountError = computed(() => {
 })
 
 const canSubmit = computed(() =>
-  validAmount.value > 0
+  rechargeRateAvailable.value && creditedAmount.value > 0 && validAmount.value > 0
     && amountFitsMethod(payBaseAmount.value, selectedMethod.value)
     && selectedLimit.value?.available !== false
 )
@@ -810,6 +818,10 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       forceQRCode: !!(checkout.value.alipay_force_qrcode && normalizeVisibleMethod(requestType) === 'alipay'),
       mobilePrecreateDeepLink: checkout.value.alipay_mobile_precreate_deep_link === true,
     })
+    if (orderType === 'balance') {
+      const currency = normalizePaymentCurrency(visibleMethods.value[requestType]?.currency)
+      payload.expected_recharge_multiplier = options.expectedRechargeMultiplier ?? rechargeMultiplierFor(currency)
+    }
     if (options.openid) {
       payload.openid = options.openid
     }
@@ -868,6 +880,7 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
         orderType,
         planId,
         orderAmount,
+        expectedRechargeMultiplier: payload.expected_recharge_multiplier,
       })
       return
     }
@@ -944,7 +957,14 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
     }
   } catch (err: unknown) {
     const apiErr = err as Record<string, unknown>
-    if (apiErr.reason === 'TOO_MANY_PENDING') {
+    if (apiErr.reason === 'RECHARGE_EXCHANGE_CHANGED' || apiErr.reason === 'RECHARGE_EXCHANGE_UNAVAILABLE') {
+      errorMessage.value = t(`payment.errors.${apiErr.reason}`)
+      try {
+        checkout.value = (await paymentAPI.getCheckoutInfo()).data
+      } catch {
+        // Keep the current checkout visible so the user can retry.
+      }
+    } else if (apiErr.reason === 'TOO_MANY_PENDING') {
       const metadata = apiErr.metadata as Record<string, unknown> | undefined
       errorMessage.value = t('payment.errors.tooManyPending', { max: metadata?.max || '' })
       errorHintMessage.value = ''
@@ -1108,6 +1128,7 @@ async function resumeWechatPaymentFromQuery() {
   if (resume.wechatResumeToken) {
     await createOrder(0, resume.orderType, resume.planId, {
       wechatResumeToken: resume.wechatResumeToken,
+      expectedRechargeMultiplier: resume.expectedRechargeMultiplier,
       paymentType: resume.paymentType,
       isResume: true,
     })
@@ -1117,6 +1138,7 @@ async function resumeWechatPaymentFromQuery() {
   if (resume.orderAmount > 0 && resume.openid) {
     await createOrder(resume.orderAmount, resume.orderType, resume.planId, {
       openid: resume.openid,
+      expectedRechargeMultiplier: resume.expectedRechargeMultiplier,
       paymentType: resume.paymentType,
       isResume: true,
     })

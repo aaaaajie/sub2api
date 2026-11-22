@@ -169,6 +169,7 @@ export default {
     dataDashboard: '数据看板',
     myInfo: '我的信息',
     primaryNavigation: '主导航',
+    adminPortal: '管理',
     announcements: '公告',
     apiKeys: 'API 密钥',
     batchImage: '批量生图',

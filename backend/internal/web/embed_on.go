@@ -98,6 +98,10 @@ func (s *FrontendServer) Middleware() gin.HandlerFunc {
 		if cleanPath == "" {
 			cleanPath = "index.html"
 		}
+		if cleanPath == "manifest.webmanifest" {
+			s.serveWebManifest(c)
+			return
+		}
 
 		// For index.html or SPA routes, serve with injected settings
 		if cleanPath == "index.html" || !s.fileExists(cleanPath) {
@@ -115,6 +119,46 @@ func (s *FrontendServer) Middleware() gin.HandlerFunc {
 		s.fileServer.ServeHTTP(c.Writer, c.Request)
 		c.Abort()
 	}
+}
+
+func (s *FrontendServer) serveWebManifest(c *gin.Context) {
+	name := "Sub2API"
+	if s.settings != nil {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+		defer cancel()
+		if settings, err := s.settings.GetPublicSettingsForInjection(ctx); err == nil {
+			if settingsJSON, err := json.Marshal(settings); err == nil {
+				var configured struct {
+					SiteName string `json:"site_name"`
+				}
+				if json.Unmarshal(settingsJSON, &configured) == nil && strings.TrimSpace(configured.SiteName) != "" {
+					name = strings.TrimSpace(configured.SiteName)
+				}
+			}
+		}
+	}
+
+	manifest := map[string]any{
+		"name":             name,
+		"short_name":       name,
+		"description":      name + " AI API Gateway",
+		"start_url":        "/data-dashboard",
+		"scope":            "/",
+		"display":          "standalone",
+		"display_override": []string{"standalone", "minimal-ui"},
+		"background_color": "#f5f6fb",
+		"theme_color":      "#f5f6fb",
+		"icons": []map[string]string{
+			{"src": "/pwa-192.png", "sizes": "192x192", "type": "image/png"},
+			{"src": "/pwa-512.png", "sizes": "512x512", "type": "image/png"},
+			{"src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+		},
+	}
+
+	manifestJSON, _ := json.Marshal(manifest)
+	c.Header("Cache-Control", "no-cache")
+	c.Data(http.StatusOK, "application/manifest+json; charset=utf-8", manifestJSON)
+	c.Abort()
 }
 
 func (s *FrontendServer) fileExists(path string) bool {

@@ -21,6 +21,7 @@ type ModelPlazaHandler struct {
 	plazaService   *service.ModelPlazaService
 	apiKeyService  *service.APIKeyService
 	settingService *service.SettingService
+	paymentConfig  *service.PaymentConfigService
 }
 
 // NewModelPlazaHandler 创建模型广场 handler。
@@ -28,16 +29,20 @@ func NewModelPlazaHandler(
 	plazaService *service.ModelPlazaService,
 	apiKeyService *service.APIKeyService,
 	settingService *service.SettingService,
+	paymentConfig *service.PaymentConfigService,
 ) *ModelPlazaHandler {
 	return &ModelPlazaHandler{
 		plazaService:   plazaService,
 		apiKeyService:  apiKeyService,
 		settingService: settingService,
+		paymentConfig:  paymentConfig,
 	}
 }
 
-// modelPlazaOfficialPricing 官方参考价（USD per token，与计费目录同源）。
+// modelPlazaOfficialPricing 官方参考价，每 token。
 type modelPlazaOfficialPricing struct {
+	Currency           string   `json:"currency"`
+	SourceCurrency     string   `json:"source_currency,omitempty"`
 	InputPrice         *float64 `json:"input_price"`
 	OutputPrice        *float64 `json:"output_price"`
 	CacheWritePrice    *float64 `json:"cache_write_price"`
@@ -157,10 +162,51 @@ func (h *ModelPlazaHandler) Get(c *gin.Context) {
 	// 追加而非覆盖：CORS 中间件已为具体来源写入 Vary: Origin。
 	c.Writer.Header().Add("Vary", "Accept-Language")
 	out := toLocalizedModelPlazaGroups(visible, userRates, c.GetHeader("Accept-Language"))
+	h.normalizePlazaReferencePrices(c, out)
 	response.Success(c, modelPlazaResponse{
 		Description: rt.Description,
 		Groups:      out,
 	})
+}
+
+// normalizePlazaReferencePrices puts domestic references in the same USD unit as model charges.
+func (h *ModelPlazaHandler) normalizePlazaReferencePrices(c *gin.Context, groups []modelPlazaGroup) {
+	var multiplier float64
+	rateLoaded := false
+	ctx := c.Request.Context()
+	for _, group := range groups {
+		for _, model := range group.Models {
+			price := model.OfficialPricing
+			if price == nil || price.Currency != "CNY" {
+				continue
+			}
+			if !rateLoaded {
+				rateLoaded = true
+				if h.paymentConfig != nil {
+					if cfg, err := h.paymentConfig.GetPaymentConfig(ctx); err == nil {
+						multiplier, _ = h.paymentConfig.RechargeMultiplier(ctx, cfg, "CNY")
+					}
+				}
+			}
+			// Domestic reference prices are flat token prices. Keep their time multipliers.
+			*price = modelPlazaOfficialPricing{
+				Currency:       "USD",
+				SourceCurrency: "CNY",
+				InputPrice:     convertPlazaReferencePrice(price.InputPrice, multiplier),
+				OutputPrice:    convertPlazaReferencePrice(price.OutputPrice, multiplier),
+				CacheReadPrice: convertPlazaReferencePrice(price.CacheReadPrice, multiplier),
+				TimePricing:    price.TimePricing,
+			}
+		}
+	}
+}
+
+func convertPlazaReferencePrice(price *float64, multiplier float64) *float64 {
+	if price == nil || multiplier <= 0 {
+		return nil
+	}
+	value := *price * multiplier
+	return &value
 }
 
 // filterPlazaVisibleGroups 按登录态裁剪分组可见性。
@@ -267,6 +313,7 @@ func toModelPlazaOfficialPricing(p *service.PlazaOfficialPricing) *modelPlazaOff
 		return nil
 	}
 	return &modelPlazaOfficialPricing{
+		Currency:           p.Currency,
 		InputPrice:         p.InputPrice,
 		OutputPrice:        p.OutputPrice,
 		CacheWritePrice:    p.CacheWritePrice,

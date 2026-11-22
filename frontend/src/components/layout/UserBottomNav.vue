@@ -17,6 +17,7 @@
         :to="item.to"
         :data-tour="item.to === '/keys' ? 'user-my-keys' : undefined"
         :aria-current="activePath === item.to ? 'page' : undefined"
+        @click="openAdminSidebar(item.to)"
         class="relative flex h-12 sm:h-14 min-h-[3rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[9px] font-medium leading-tight text-gray-600 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/60 motion-reduce:transition-none dark:text-gray-300 dark:focus-visible:ring-gray-500/70 sm:min-w-[6rem] sm:gap-1 sm:px-3 sm:py-2 sm:text-[10px]"
         :class="activePath === item.to
           ? 'bottom-nav-selected text-white dark:text-gray-900'
@@ -40,6 +41,7 @@ import { useRoute, RouterLink } from 'vue-router'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 import Icon from '@/components/icons/Icon.vue'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 
@@ -47,6 +49,7 @@ const props = withDefaults(defineProps<{ embedded?: boolean; activePath?: string
 const route = useRoute()
 const { t } = useI18n()
 const authStore = useAuthStore()
+const appStore = useAppStore()
 const activePath = computed(() => props.activePath ?? route.path)
 const paymentEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.payment))
 
@@ -56,10 +59,21 @@ const coreItems = [
   { to: '/profile', label: 'nav.myInfo', icon: 'userCircle' },
 ] as const
 
+const rechargeItem = { to: '/purchase', label: 'nav.creditRecharge', icon: 'creditCard' } as const
+const adminItem = { to: '/admin/dashboard', label: 'nav.adminPortal', icon: 'cog' } as const
+
 const items = computed(() => {
-  if (authStore.isSimpleMode || !paymentEnabled.value) return coreItems
-  return [...coreItems, { to: '/purchase', label: 'nav.creditRecharge', icon: 'creditCard' as const }]
+  return [
+    ...coreItems,
+    ...(!authStore.isSimpleMode && paymentEnabled.value ? [rechargeItem] : []),
+    ...(authStore.isAdmin ? [adminItem] : [])
+  ]
 })
+
+function openAdminSidebar(path: string) {
+  if (path === adminItem.to) appStore.setMobileOpen(true)
+}
+
 defineExpose({ itemCount: computed(() => items.value.length) })
 </script>
 

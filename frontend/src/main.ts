@@ -6,6 +6,7 @@ import i18n, { initI18n } from './i18n'
 import { useAppStore } from '@/stores/app'
 import { updateFavicon } from '@/utils/branding'
 import { isIOSDevice } from '@/utils/device'
+import { syncThemeColor } from '@/utils/theme-meta'
 import './style.css'
 
 function initIOSViewportZoomFix() {
@@ -28,11 +29,19 @@ function initThemeClass() {
     savedTheme === 'dark' ||
     (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
   document.documentElement.classList.toggle('dark', shouldUseDark)
+  syncThemeColor(shouldUseDark)
+}
+
+function initStandaloneModeClass() {
+  const standaloneMedia = window.matchMedia('(display-mode: standalone)').matches
+  const standaloneIOS = 'standalone' in window.navigator && window.navigator.standalone === true
+  document.documentElement.classList.toggle('pwa-standalone', standaloneMedia || standaloneIOS)
 }
 
 async function bootstrap() {
   // Apply theme class globally before app mount to keep all routes consistent.
   initThemeClass()
+  initStandaloneModeClass()
   initIOSViewportZoomFix()
 
   const app = createApp(App)

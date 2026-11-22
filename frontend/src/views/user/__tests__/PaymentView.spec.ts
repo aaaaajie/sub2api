@@ -375,16 +375,19 @@ describe('PaymentView subscription plan grid', () => {
 })
 
 describe('PaymentView recharge rate preview', () => {
-  it('uses the selected payment method currency in both locale templates', async () => {
+  it.each([
+    ['wxpay', 'CNY', '$5.00'],
+    ['stripe', 'USD', '$10.00'],
+  ])('shows the credited amount for %s in %s', async (method, currency, credited) => {
     translate.mockClear()
     routeState.path = '/purchase'
     routeState.query = {}
     getCheckoutInfo.mockReset().mockResolvedValue(checkoutInfoFixture({
       balance_recharge_multiplier: 0.5,
       methods: {
-        stripe: {
+        [method]: {
           ...checkoutInfoFixture().data.methods.wxpay,
-          currency: 'USD',
+          currency,
         },
       },
     }))
@@ -402,12 +405,14 @@ describe('PaymentView recharge rate preview', () => {
     wrapper.getComponent(AmountInput).vm.$emit('update:modelValue', 10)
     await flushPromises()
 
-    expect(translate).toHaveBeenCalledWith('payment.rechargeRatePreview', {
-      currency: 'USD',
-      usd: '0.50',
-    })
-    expect(en.payment.rechargeRatePreview).toBe('Current rate: 1 {currency} = {usd} USD')
-    expect(zh.payment.rechargeRatePreview).toBe('当前倍率：1 {currency} = {usd} USD')
+    expect(wrapper.get('[data-testid="recharge-credited-row"]').text()).toContain(credited)
+    if (currency === 'CNY') {
+      expect(translate).toHaveBeenCalledWith('payment.rechargeRatePreview', { cny: '2.00' })
+    } else {
+      expect(translate).not.toHaveBeenCalledWith('payment.rechargeRatePreview', expect.anything())
+    }
+    expect(en.payment.rechargeRatePreview).toBe('Recharge rate: 1 USD ≈ {cny} CNY')
+    expect(zh.payment.rechargeRatePreview).toBe('充值汇率：1 USD ≈ {cny} CNY')
   })
 })
 

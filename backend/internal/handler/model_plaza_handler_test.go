@@ -286,6 +286,7 @@ func TestModelPlazaHandler_VaryKeepsCORSOrigin(t *testing.T) {
 		service.NewModelPlazaService(plazaVaryChannelRepo{}, plazaVaryGroupRepo{}, nil, nil, nil),
 		nil,
 		service.NewSettingService(plazaVarySettingRepo{}, &config.Config{}),
+		nil,
 	)
 	r := gin.New()
 	r.Use(middleware.CORS(config.CORSConfig{AllowedOrigins: []string{"https://a.example", "https://b.example"}}))
