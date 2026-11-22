@@ -181,7 +181,7 @@ describe('PlazaModelPricingTable', () => {
     expect(text).toContain('0.8x')
   })
 
-  it('模型按官方输出价从高到低排序,无官方价的排最后', () => {
+  it('模型保留后端顺序，包括无官方报价的模型', () => {
     const expensive = tokenModel({
       name: 'model-expensive',
       official_pricing: {
@@ -206,20 +206,19 @@ describe('PlazaModelPricingTable', () => {
 
     const wrapper = mountTable([cheap, noOfficial, expensive], 1)
     const names = wrapper.findAll('tbody tr').map((tr) => tr.find('td').text())
-    expect(names).toEqual(['model-expensive', 'model-cheap', 'model-no-official'])
+    expect(names).toEqual(['model-cheap', 'model-no-official', 'model-expensive'])
   })
 
-  it('官方输出价相同时按模型名降序(新版本号在前)', () => {
+  it('官方价相同时仍保留后端顺序', () => {
     const older = tokenModel({ name: 'gpt-5.5' })
     const newer = tokenModel({ name: 'gpt-5.6-sol' })
 
     const wrapper = mountTable([older, newer], 1)
     const names = wrapper.findAll('tbody tr').map((tr) => tr.find('td').text())
-    expect(names).toEqual(['gpt-5.6-sol', 'gpt-5.5'])
+    expect(names).toEqual(['gpt-5.5', 'gpt-5.6-sol'])
   })
 
-  it('按图片/按次计费的模型沉到末尾,不与 token 模型按官方价混排', () => {
-    // 官方输出价 $10,介于下面两个 token 模型之间,但因计费模式不同应排最后
+  it('按图和按 Token 计费的模型都保留后端顺序', () => {
     const image = tokenModel({
       name: 'gpt-image-2',
       pricing: {
@@ -265,9 +264,9 @@ describe('PlazaModelPricingTable', () => {
     const wrapper = mountTable([pricier, image, cheaper], 1)
     const names = wrapper.findAll('tbody tr').map((tr) => tr.find('td').text())
     expect(names[0]).toBe('gpt-5.6-terra')
-    expect(names[1]).toBe('gpt-5.6-luna')
-    // 首列含「按图片计费」徽章文本,只断言模型名
-    expect(names[2]).toContain('gpt-image-2')
+    // 首列含「按图片计费」徽章文本。
+    expect(names[1]).toContain('gpt-image-2')
+    expect(names[2]).toBe('gpt-5.6-luna')
   })
 
   it('两级表头:实付区与官方区各拆输入/输出/缓存列', () => {
@@ -730,6 +729,31 @@ describe('PlazaModelPricingTable 分时计价', () => {
 
     // 官方列不受时段影响
     expect(nightCells[4].text()).toContain('$3.00')
+  })
+
+  it('以美元比较同一时段的国内参考价和实付价', () => {
+    const model = timePricedModel()
+    model.pricing!.input_price = 0.15e-6
+    model.pricing!.output_price = 0.60e-6
+    model.pricing!.cache_read_price = 0.003e-6
+    model.official_pricing = {
+      currency: 'USD',
+      source_currency: 'CNY',
+      input_price: 1e-6 / 6.7131,
+      output_price: 4e-6 / 6.7131,
+      cache_write_price: null,
+      cache_read_price: 0.02e-6 / 6.7131,
+      time_pricing: model.time_pricing,
+    }
+
+    const wrapper = mountTable([model], 0.5)
+    expect(wrapper.text()).toContain('modelPlaza.table.domesticOfficialPrice')
+    for (const row of wrapper.findAll('tbody tr')) {
+      const cells = row.findAll('td')
+      expect(cells[1].text()).toContain('$')
+      expect(cells[4].text()).toContain('$')
+      expect(cells[7].text()).toBe('0.503x')
+    }
   })
 
   it('仅工作日生效时时段行带工作日前缀,tooltip 换用周末回落文案', () => {
