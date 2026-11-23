@@ -76,6 +76,26 @@ func TestGatewayRoutesOpenAIResponsesCompactPathIsRegistered(t *testing.T) {
 	}
 }
 
+func TestGatewayRoutesRejectDuplicateFieldsBeforeGroupPrompt(t *testing.T) {
+	router := newGatewayRoutesTestRouterWithGroup(&service.Group{
+		ID: 1, Platform: service.PlatformOpenAI, SystemPrompt: "Group instructions",
+	})
+
+	for _, path := range []string{"/v1/responses", "/responses", "/backend-api/codex/responses"} {
+		t.Run(path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(
+				`{"model":"gpt-5","instructions":"Hello","instructions":"Hello"}`,
+			))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+			require.Equal(t, http.StatusBadRequest, w.Code)
+			require.Contains(t, w.Body.String(), "more than once")
+		})
+	}
+}
+
 func TestGatewayRoutesOpenAIAlphaSearchPathsAreRegistered(t *testing.T) {
 	router := newGatewayRoutesTestRouter()
 	registered := make(map[string]bool)
