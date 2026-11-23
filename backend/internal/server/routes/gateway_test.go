@@ -25,17 +25,13 @@ func newGatewayRoutesTestRouter(platform ...string) *gin.Engine {
 }
 
 func newGatewayRoutesTestRouterWithConfig(cfg *config.Config, platform ...string) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+
 	groupPlatform := service.PlatformOpenAI
 	if len(platform) > 0 && platform[0] != "" {
 		groupPlatform = platform[0]
 	}
-	return newGatewayRoutesTestRouterForGroup(cfg, &service.Group{ID: 1, Platform: groupPlatform})
-}
-
-func newGatewayRoutesTestRouterForGroup(cfg *config.Config, group *service.Group) *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-
 	RegisterGatewayRoutes(
 		router,
 		&handler.Handlers{
@@ -44,9 +40,10 @@ func newGatewayRoutesTestRouterForGroup(cfg *config.Config, group *service.Group
 			AsyncImage:    handler.NewAsyncImageHandler(nil, nil),
 		},
 		servermiddleware.APIKeyAuthMiddleware(func(c *gin.Context) {
+			groupID := int64(1)
 			c.Set(string(servermiddleware.ContextKeyAPIKey), &service.APIKey{
-				GroupID: &group.ID,
-				Group:   group,
+				GroupID: &groupID,
+				Group:   &service.Group{Platform: groupPlatform},
 			})
 			c.Next()
 		}),
@@ -80,9 +77,9 @@ func TestGatewayRoutesOpenAIResponsesCompactPathIsRegistered(t *testing.T) {
 }
 
 func TestGatewayRoutesRejectDuplicateFieldsBeforeGroupPrompt(t *testing.T) {
-	router := newGatewayRoutesTestRouterForGroup(&config.Config{
-		Gateway: config.GatewayConfig{MaxBodySize: 1024 * 1024},
-	}, &service.Group{ID: 1, Platform: service.PlatformOpenAI, SystemPrompt: "Group instructions"})
+	router := newGatewayRoutesTestRouterWithGroup(&service.Group{
+		ID: 1, Platform: service.PlatformOpenAI, SystemPrompt: "Group instructions",
+	})
 
 	for _, path := range []string{"/v1/responses", "/responses", "/backend-api/codex/responses"} {
 		t.Run(path, func(t *testing.T) {

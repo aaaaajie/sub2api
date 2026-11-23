@@ -32,12 +32,14 @@ func TestGatewayRoutesRejectConflictingFieldsMountedOnEveryGatewayRoute(t *testi
 		"every chain that mounts groupModelAllowlist must mount rejectConflictingFields right after it")
 	require.GreaterOrEqual(t, len(followedByConflict), 6, "gateway, gemini, root aliases, codexDirect and both antigravity chains")
 
-	// 带合成路由改写的链：歧义拒绝必须在改写之前。
+	// 在任何请求体改写之前检查原始字段，包括分组提示词和合成路由。
 	for _, chain := range []string{
-		`gateway.Use(rejectConflictingFields)` + "\n\t" + `gateway.Use(compositeTarget)`,
-		`gemini.Use(rejectConflictingFields)` + "\n\t" + `gemini.Use(compositeGeminiTarget)`,
-		`groupModelAllowlist, rejectConflictingFields, compositeTarget, requireGroupAnthropic, handler)`,
-		`groupModelAllowlist, rejectConflictingFields, compositeTarget, requireGroupAnthropic)`,
+		`gateway.Use(rejectConflictingFields)` + "\n\t" + `gateway.Use(groupSystemPrompt)` + "\n\t" + `gateway.Use(compositeTarget)`,
+		`gemini.Use(rejectConflictingFields)` + "\n\t" + `gemini.Use(groupSystemPrompt)` + "\n\t" + `gemini.Use(compositeGeminiTarget)`,
+		`antigravityV1.Use(rejectConflictingFields)` + "\n\t" + `antigravityV1.Use(groupSystemPrompt)` + "\n\t" + `antigravityV1.Use(requireGroupAnthropic)`,
+		`antigravityV1Beta.Use(rejectConflictingFields)` + "\n\t" + `antigravityV1Beta.Use(groupSystemPrompt)` + "\n\t" + `antigravityV1Beta.Use(requireGroupGoogle)`,
+		`groupModelAllowlist, rejectConflictingFields, groupSystemPrompt, compositeTarget, requireGroupAnthropic, handler)`,
+		`groupModelAllowlist, rejectConflictingFields, groupSystemPrompt, compositeTarget, requireGroupAnthropic)`,
 	} {
 		require.Contains(t, source, chain)
 	}
