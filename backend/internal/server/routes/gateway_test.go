@@ -25,13 +25,17 @@ func newGatewayRoutesTestRouter(platform ...string) *gin.Engine {
 }
 
 func newGatewayRoutesTestRouterWithConfig(cfg *config.Config, platform ...string) *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-
 	groupPlatform := service.PlatformOpenAI
 	if len(platform) > 0 && platform[0] != "" {
 		groupPlatform = platform[0]
 	}
+	return newGatewayRoutesTestRouterForGroup(cfg, &service.Group{ID: 1, Platform: groupPlatform})
+}
+
+func newGatewayRoutesTestRouterForGroup(cfg *config.Config, group *service.Group) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+
 	RegisterGatewayRoutes(
 		router,
 		&handler.Handlers{
@@ -40,10 +44,9 @@ func newGatewayRoutesTestRouterWithConfig(cfg *config.Config, platform ...string
 			AsyncImage:    handler.NewAsyncImageHandler(nil, nil),
 		},
 		servermiddleware.APIKeyAuthMiddleware(func(c *gin.Context) {
-			groupID := int64(1)
 			c.Set(string(servermiddleware.ContextKeyAPIKey), &service.APIKey{
-				GroupID: &groupID,
-				Group:   &service.Group{Platform: groupPlatform},
+				GroupID: &group.ID,
+				Group:   group,
 			})
 			c.Next()
 		}),
@@ -73,6 +76,26 @@ func TestGatewayRoutesOpenAIResponsesCompactPathIsRegistered(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 		require.NotEqual(t, http.StatusNotFound, w.Code, "path=%s should hit OpenAI responses handler", path)
+	}
+}
+
+func TestGatewayRoutesRejectDuplicateFieldsBeforeGroupPrompt(t *testing.T) {
+	router := newGatewayRoutesTestRouterForGroup(&config.Config{
+		Gateway: config.GatewayConfig{MaxBodySize: 1024 * 1024},
+	}, &service.Group{ID: 1, Platform: service.PlatformOpenAI, SystemPrompt: "Group instructions"})
+
+	for _, path := range []string{"/v1/responses", "/responses", "/backend-api/codex/responses"} {
+		t.Run(path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(
+				`{"model":"gpt-5","instructions":"Hello","instructions":"Hello"}`,
+			))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+			require.Equal(t, http.StatusBadRequest, w.Code)
+			require.Contains(t, w.Body.String(), "more than once")
+		})
 	}
 }
 
