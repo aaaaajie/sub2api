@@ -351,6 +351,7 @@ func TestAPIContracts(t *testing.T) {
 					{
 						"id": 10,
 						"name": "Group One",
+						"display_platform": "",
 						"description": "desc",
 						"platform": "anthropic",
 						"rate_multiplier": 1.5,
@@ -990,6 +991,7 @@ func TestAPIContracts(t *testing.T) {
 					"payment_cancel_rate_limit_window_mode": "",
 					"payment_alipay_force_qrcode": false,
 					"payment_alipay_mobile_precreate_deep_link": false,
+					"payment_auto_recharge_exchange": false,
 					"balance_low_notify_enabled": false,
 					"account_quota_notify_enabled": false,
 					"account_scheduling_thresholds": {"anthropic":100,"grok":100,"openai":100},
@@ -1312,6 +1314,7 @@ func TestAPIContracts(t *testing.T) {
 					"payment_cancel_rate_limit_window_mode": "",
 					"payment_alipay_force_qrcode": false,
 					"payment_alipay_mobile_precreate_deep_link": false,
+					"payment_auto_recharge_exchange": false,
 					"balance_low_notify_enabled": false,
 					"account_quota_notify_enabled": false,
 					"account_scheduling_thresholds": {"anthropic":100,"grok":100,"openai":100},
@@ -1908,9 +1911,7 @@ func (s *stubAccountRepo) Update(ctx context.Context, account *service.Account) 
 func (s *stubAccountRepo) UpdateWithAccountBillingSettings(
 	ctx context.Context,
 	account *service.Account,
-	probeEnabled *bool,
-	rateSyncEnabled *bool,
-	rateMultiplier *float64,
+	settings service.AccountBillingSettingsUpdate,
 ) error {
 	return errors.New("not implemented")
 }
@@ -2759,6 +2760,14 @@ func (r *stubUsageLogRepo) GetAPIKeyDashboardStats(ctx context.Context, apiKeyID
 }
 
 func (r *stubUsageLogRepo) GetUserUsageTrendByUserID(ctx context.Context, userID int64, startTime, endTime time.Time, granularity string) ([]usagestats.TrendDataPoint, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *stubUsageLogRepo) GetRecentUserUsageHours(ctx context.Context, userID int64, timezone string) ([]usagestats.TrendDataPoint, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *stubUsageLogRepo) GetRecentUsageActivityHours(ctx context.Context, limit int) ([]service.RecentUsageActivityHour, error) {
 	return nil, errors.New("not implemented")
 }
 
