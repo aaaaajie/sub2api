@@ -2,13 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   addCustomModelAllowlistItem,
-  createModelAllowlistState,
-  type ModelAllowlistAddError,
-} from "../groupModelAllowlist";
-
-import {
   buildModelAllowlistConfig,
   createModelAllowlistState,
+  type ModelAllowlistAddError,
   hydrateModelAllowlistState,
   invertModelAllowlistSelection,
   moveModelAllowlistItem,
@@ -73,6 +69,27 @@ describe("groupModelAllowlist", () => {
       enabled: true,
       models: ["gpt-5.4", "gpt-5.5"],
     });
+  });
+
+  it("keeps hidden models selected across refreshes while saving a separate listing order", () => {
+    const state = hydrateModelAllowlistState({
+      enabled: true,
+      models: ["gpt-6.2-sol", "gpt-6.2-astra"],
+      hidden_models: ["gpt-image-2"],
+    }, ["gpt-image-2", "gpt-6.2-sol", "gpt-6.2-astra"]);
+
+    const image = state.items.find(item => item.id === "gpt-image-2");
+    expect(image).toEqual({ id: "gpt-image-2", selected: true, hidden: true });
+    moveModelAllowlistItem(state, 1, 0);
+    setModelAllowlistCandidates(state, ["gpt-image-2", "gpt-6.2-astra", "gpt-6.2-sol", "gpt-6-luna"]);
+
+    expect(buildModelAllowlistConfig(state)).toEqual({
+      enabled: true,
+      models: ["gpt-6.2-astra", "gpt-6.2-sol"],
+      hidden_models: ["gpt-image-2"],
+    });
+    toggleModelAllowlistItem(state, "gpt-image-2");
+    expect(buildModelAllowlistConfig(state)).not.toHaveProperty("hidden_models");
   });
 
   it("keeps selected models in payload even when disabled so reopening can restore choices", () => {

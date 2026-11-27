@@ -1,16 +1,19 @@
 export interface ModelAllowlistConfig {
   enabled: boolean
   models: string[]
+  hidden_models?: string[]
 }
 
 export interface ModelAllowlistItem {
   id: string
   selected: boolean
+  hidden?: boolean
 }
 
 export interface ModelAllowlistState {
   enabled: boolean
   savedModels: string[]
+  savedHiddenModels: string[]
   items: ModelAllowlistItem[]
 }
 
@@ -22,6 +25,7 @@ export const createModelAllowlistState = (
 ): ModelAllowlistState => ({
   enabled: config?.enabled ?? false,
   savedModels: normalizeModels(config?.models ?? []),
+  savedHiddenModels: normalizeModels(config?.hidden_models ?? []),
   items: [],
 })
 
@@ -38,30 +42,16 @@ export const setModelAllowlistCandidates = (
   state: ModelAllowlistState,
   candidates: string[],
 ) => {
-  const normalizedCandidates = normalizeModels(candidates)
-  const currentSelected = new Set(
-    state.items.filter(item => item.selected).map(item => item.id),
-  )
-  const currentKnown = new Set(state.items.map(item => item.id))
-  const savedSelected = new Set(state.savedModels)
-  const hasExistingItems = state.items.length > 0
-  const selectionOrder = normalizeModels([
-    ...state.items.map(item => item.id),
-    ...state.savedModels,
-    ...normalizedCandidates,
-  ])
+  const current = new Map(state.items.map(item => [item.id, item]))
+  const savedHidden = new Set(state.savedHiddenModels)
+  const savedSelected = new Set([...state.savedModels, ...savedHidden])
+  const selectionOrder = normalizeModels([...current.keys(), ...savedSelected, ...candidates])
 
   state.items = selectionOrder.map(id => {
-    const selected = hasExistingItems
-      ? currentSelected.has(id)
-      : state.savedModels.length > 0
-        ? savedSelected.has(id)
-        : normalizedCandidates.includes(id)
-
-    return {
-      id,
-      selected: selected && (currentKnown.has(id) || savedSelected.has(id) || state.savedModels.length === 0),
-    }
+    const item = current.get(id)
+    if (item) return item
+    const selected = current.size === 0 && (savedSelected.size === 0 || savedSelected.has(id))
+    return savedHidden.has(id) ? { id, selected, hidden: true } : { id, selected }
   })
 }
 
@@ -117,7 +107,7 @@ export const addCustomModelAllowlistItem = (
   }
   if (
     state.items.some(item => item.id.toLowerCase() === entry.toLowerCase()) ||
-    state.savedModels.some(model => model.toLowerCase() === entry.toLowerCase())
+    [...state.savedModels, ...state.savedHiddenModels].some(model => model.toLowerCase() === entry.toLowerCase())
   ) {
     return 'duplicate'
   }
@@ -127,12 +117,16 @@ export const addCustomModelAllowlistItem = (
 
 export const buildModelAllowlistConfig = (
   state: ModelAllowlistState,
-): ModelAllowlistConfig => ({
-  enabled: state.enabled,
-  models: state.items.length > 0
-    ? state.items.filter(item => item.selected).map(item => item.id)
-    : [...state.savedModels],
-})
+): ModelAllowlistConfig => {
+  const selected = state.items.filter(item => item.selected)
+  const models = state.items.length ? selected.filter(item => !item.hidden).map(item => item.id) : [...state.savedModels]
+  const hidden = state.items.length ? selected.filter(item => item.hidden).map(item => item.id) : [...state.savedHiddenModels]
+  return {
+    enabled: state.enabled,
+    models,
+    ...(hidden.length ? { hidden_models: hidden } : {}),
+  }
+}
 
 export const selectedModelAllowlistCount = (state: ModelAllowlistState): number =>
   state.items.filter(item => item.selected).length

@@ -55,7 +55,7 @@ func (h *GatewayHandler) GeminiV1BetaListModels(c *gin.Context) {
 		}
 		filtered := make([]gemini.Model, 0, len(models))
 		for _, model := range models {
-			if apiKey.Group.ModelAllowlist.Allows(model.Name) {
+			if apiKey.Group.ModelAllowlist.AllowsListing(model.Name) {
 				filtered = append(filtered, model)
 			}
 		}
@@ -216,7 +216,7 @@ func filterUpstreamGeminiModelsBody(body []byte, allowlist service.GroupModelAll
 		if err := json.Unmarshal(raw, &model); err != nil {
 			return nil, false, false
 		}
-		if allowlist.Allows(model.Name) {
+		if allowlist.AllowsListing(model.Name) {
 			kept = append(kept, raw)
 		}
 	}

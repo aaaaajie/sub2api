@@ -1594,7 +1594,7 @@ func (h *GatewayHandler) AntigravityModels(c *gin.Context) {
 	if apiKey, ok := middleware2.GetAPIKeyFromContext(c); ok && apiKey != nil && apiKey.Group != nil && apiKey.Group.ModelAllowlistEnabled() {
 		filtered := make([]antigravity.ClaudeModel, 0, len(models))
 		for _, model := range models {
-			if apiKey.Group.ModelAllowlist.Allows(model.ID) {
+			if apiKey.Group.ModelAllowlist.AllowsListing(model.ID) {
 				filtered = append(filtered, model)
 			}
 		}

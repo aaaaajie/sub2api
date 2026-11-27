@@ -1533,11 +1533,12 @@ func TestMergeGroupConfiguredCodexModelsHonorsCustomListAndFinalETag(t *testing.
 		ID:       groupID,
 		Platform: PlatformOpenAI,
 		ModelAllowlist: GroupModelAllowlist{
-			Enabled: true,
-			Models:  []string{"deepseek-4-pro"},
+			Enabled:      true,
+			Models:       []string{"deepseek-4-pro", "hidden-*"},
+			HiddenModels: []string{"hidden-alias"},
 		},
 	}
-	upstreamBody := []byte(`{"models":[{"slug":"gpt-5.6","display_name":"GPT-5.6"}]}`)
+	upstreamBody := []byte(`{"models":[{"slug":"gpt-5.6","display_name":"GPT-5.6"},{"slug":"hidden-alias"}]}`)
 	manifest := &OpenAIModelsResponse{Body: upstreamBody}
 
 	require.NoError(t, svc.MergeGroupConfiguredCodexModels(context.Background(), group, manifest, ""))

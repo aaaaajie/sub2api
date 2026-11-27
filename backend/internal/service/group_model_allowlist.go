@@ -16,17 +16,18 @@ import (
 type GroupModelAllowlist struct {
 	Enabled      bool     `json:"enabled"`
 	Models       []string `json:"models,omitempty"`
+	HiddenModels []string `json:"hidden_models,omitempty"`
 	DefaultModel string   `json:"default_model,omitempty"`
 }
 
 // DomainGroupModelAllowlist 把 service 白名单转换为 ent 持久化使用的 domain 类型。
 func DomainGroupModelAllowlist(cfg GroupModelAllowlist) domain.GroupModelAllowlist {
-	return domain.GroupModelAllowlist{Enabled: cfg.Enabled, Models: cfg.Models, DefaultModel: cfg.DefaultModel}
+	return domain.GroupModelAllowlist{Enabled: cfg.Enabled, Models: cfg.Models, HiddenModels: cfg.HiddenModels, DefaultModel: cfg.DefaultModel}
 }
 
 // GroupModelAllowlistFromDomain 把 ent 读出的 domain 白名单转换为 service 类型。
 func GroupModelAllowlistFromDomain(cfg domain.GroupModelAllowlist) GroupModelAllowlist {
-	return GroupModelAllowlist{Enabled: cfg.Enabled, Models: cfg.Models, DefaultModel: cfg.DefaultModel}
+	return GroupModelAllowlist{Enabled: cfg.Enabled, Models: cfg.Models, HiddenModels: cfg.HiddenModels, DefaultModel: cfg.DefaultModel}
 }
 
 // supplementUnmappedOpenAIModels ensures a partial mapping catalog does not
@@ -51,17 +52,25 @@ func supplementUnmappedOpenAIModels(accounts []Account, models []string) []strin
 // 条目 TrimSpace、按小写去重保序；`*` 可出现在任意位置；
 // enabled=true 且列表为空视为配置错误，返回 400 而不是运行时静默放行/拒绝。
 func normalizeGroupModelAllowlist(cfg GroupModelAllowlist) (GroupModelAllowlist, error) {
-	out := GroupModelAllowlist{Enabled: cfg.Enabled, DefaultModel: strings.TrimSpace(cfg.DefaultModel)}
-	if len(cfg.Models) == 0 {
-		if out.Enabled {
-			return out, infraerrors.New(http.StatusBadRequest, "INVALID_MODEL_ALLOWLIST", "model allowlist cannot be enabled with an empty model list")
-		}
-		return out, nil
+	out := GroupModelAllowlist{
+		Enabled:      cfg.Enabled,
+		Models:       normalizeGroupModelPatterns(cfg.Models),
+		HiddenModels: normalizeGroupModelPatterns(cfg.HiddenModels),
+		DefaultModel: strings.TrimSpace(cfg.DefaultModel),
 	}
+	if out.Enabled && len(out.Models) == 0 && len(out.HiddenModels) == 0 {
+		return out, infraerrors.New(http.StatusBadRequest, "INVALID_MODEL_ALLOWLIST", "model allowlist cannot be enabled with an empty model list")
+	}
+	if out.Enabled && out.DefaultModel != "" && !out.AllowsListing(out.DefaultModel) {
+		return out, infraerrors.New(http.StatusBadRequest, "DEFAULT_MODEL_NOT_ALLOWLISTED", "default model must be visible in the enabled model allowlist")
+	}
+	return out, nil
+}
 
-	seen := make(map[string]struct{}, len(cfg.Models))
-	out.Models = make([]string, 0, len(cfg.Models))
-	for _, model := range cfg.Models {
+func normalizeGroupModelPatterns(models []string) []string {
+	seen := make(map[string]struct{}, len(models))
+	var normalized []string
+	for _, model := range models {
 		model = strings.TrimSpace(model)
 		if model == "" {
 			continue
@@ -71,18 +80,9 @@ func normalizeGroupModelAllowlist(cfg GroupModelAllowlist) (GroupModelAllowlist,
 			continue
 		}
 		seen[key] = struct{}{}
-		out.Models = append(out.Models, model)
+		normalized = append(normalized, model)
 	}
-	if len(out.Models) == 0 {
-		if out.Enabled {
-			return out, infraerrors.New(http.StatusBadRequest, "INVALID_MODEL_ALLOWLIST", "model allowlist cannot be enabled with an empty model list")
-		}
-		out.Models = nil
-	}
-	if out.Enabled && out.DefaultModel != "" && !out.Allows(out.DefaultModel) {
-		return out, infraerrors.New(http.StatusBadRequest, "DEFAULT_MODEL_NOT_ALLOWLISTED", "default model must be included in the enabled model allowlist")
-	}
-	return out, nil
+	return normalized
 }
 
 // ModelAllowlistEnabled 报告该分组是否启用了模型白名单。
@@ -104,7 +104,26 @@ func (a GroupModelAllowlist) Allows(model string) bool {
 		return true
 	}
 	candidates := groupModelAllowlistCandidates(model)
-	for _, entry := range a.Models {
+	return matchesGroupModelPatterns(a.Models, candidates) || matchesGroupModelPatterns(a.HiddenModels, candidates)
+}
+
+// AllowsListing only admits models selected for display when the allowlist is enabled.
+func (a GroupModelAllowlist) AllowsListing(model string) bool {
+	if !a.Enabled {
+		return true
+	}
+	candidates := groupModelAllowlistCandidates(model)
+	return matchesGroupModelPatterns(a.Models, candidates) && !matchesGroupModelPatterns(a.HiddenModels, candidates)
+}
+
+// IsHiddenFromListing applies the explicit visibility choice to descriptive catalogs.
+func (a GroupModelAllowlist) IsHiddenFromListing(model string) bool {
+	return a.Enabled && len(a.HiddenModels) > 0 &&
+		matchesGroupModelPatterns(a.HiddenModels, groupModelAllowlistCandidates(model))
+}
+
+func matchesGroupModelPatterns(patterns, candidates []string) bool {
+	for _, entry := range patterns {
 		entry = strings.TrimSpace(entry)
 		if entry == "" {
 			continue
@@ -175,8 +194,7 @@ func (a GroupModelAllowlist) FilterForListing(source []string) []string {
 		return source
 	}
 	if len(a.Models) == 0 {
-		// 开启但为空的配置在管理端已被拒绝；对遗留脏数据保持“看到什么 = 能调什么”，
-		// 列表与准入同时返回空。
+		// 可以只启用不公开列出的模型，此时目录为空。
 		return nil
 	}
 
@@ -194,6 +212,9 @@ func (a GroupModelAllowlist) FilterForListing(source []string) []string {
 	seen := make(map[string]struct{}, len(a.Models)+len(patterns))
 	filtered := make([]string, 0, len(patterns))
 	add := func(model string) {
+		if a.IsHiddenFromListing(model) {
+			return
+		}
 		key := strings.ToLower(model)
 		if _, ok := seen[key]; ok {
 			return
@@ -240,8 +261,7 @@ func (a GroupModelAllowlist) OrderForListing(source []string) []string {
 }
 
 // OrderForDisplay applies the group's preferred model order without filtering.
-// The model plaza uses this so the allowlist remains an access-control setting,
-// while every available model stays visible.
+// The model plaza retains its pricing entries after applying explicit hiding.
 func (a GroupModelAllowlist) OrderForDisplay(source []string) []string {
 	ordered := make([]string, 0, len(source))
 	seen := make(map[string]struct{}, len(source))
@@ -275,7 +295,7 @@ func (a GroupModelAllowlist) OrderForDisplay(source []string) []string {
 
 // allowlistSourcePatternAllowsModel 沿用 filterModelsByCustomList 时代的匹配规则：
 // 精确相等、source 通配模式的前缀匹配，以及 Claude 归一化（-thinking 后缀）
-// 后的精确匹配。比较与 Allows 一律大小写不敏感，保证「准入允许 ⇒ 列表可见」。
+// 后的精确匹配。比较与 Allows 一律大小写不敏感。
 func allowlistSourcePatternAllowsModel(patterns []string, model string) bool {
 	for _, pattern := range patterns {
 		if strings.EqualFold(pattern, model) {

@@ -130,6 +130,21 @@ func TestGatewayRoutesGroupModelAllowlistAllowsListedCompositeModel(t *testing.T
 	require.NotEqual(t, http.StatusNotFound, w.Code, "allowlisted model must pass admission: %s", w.Body.String())
 }
 
+func TestGatewayRoutesGroupModelAllowlistAdmitsHiddenImageModel(t *testing.T) {
+	group := allowlistGroup(service.PlatformOpenAI, true, "gpt-6.2-sol")
+	group.ModelAllowlist.HiddenModels = []string{"gpt-image-2"}
+	router := newGatewayRoutesTestRouterWithGroup(group)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", strings.NewReader(`{"model":"gpt-image-2","prompt":"a red square"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// The fixture adds the group but deliberately omits the user context.
+	require.Equal(t, http.StatusInternalServerError, w.Code)
+	require.Contains(t, w.Body.String(), "User context not found")
+}
+
 func TestGatewayRoutesGroupModelAllowlistCoversRootAliasRoutes(t *testing.T) {
 	router := newGatewayRoutesTestRouterWithGroup(allowlistGroup(service.PlatformOpenAI, true, "gpt-5.4"))
 

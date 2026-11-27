@@ -682,6 +682,7 @@ export interface AdminGroup extends Group {
 export interface ModelAllowlist {
   enabled: boolean
   models: string[]
+  hidden_models?: string[]
   default_model?: string
 }
 

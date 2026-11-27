@@ -5,5 +5,6 @@ package domain
 type GroupModelAllowlist struct {
 	Enabled      bool     `json:"enabled"`
 	Models       []string `json:"models,omitempty"`
+	HiddenModels []string `json:"hidden_models,omitempty"`
 	DefaultModel string   `json:"default_model,omitempty"`
 }
