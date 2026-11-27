@@ -1,6 +1,7 @@
 package service
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -82,6 +83,53 @@ func TestNormalizeGroupModelAllowlist(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestGroupModelAllowlistHiddenModels(t *testing.T) {
+	cfg, err := normalizeGroupModelAllowlist(GroupModelAllowlist{
+		Enabled:      true,
+		Models:       []string{"gpt-6.2-sol", "gpt-*"},
+		HiddenModels: []string{" gpt-image-* ", "GPT-IMAGE-*"},
+		DefaultModel: "gpt-6.2-sol",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg = GroupModelAllowlistFromDomain(DomainGroupModelAllowlist(cfg))
+	if !slices.Equal(cfg.HiddenModels, []string{"gpt-image-*"}) {
+		t.Fatalf("unexpected hidden models: %v", cfg.HiddenModels)
+	}
+
+	if !cfg.Allows("gpt-image-2") || cfg.AllowsListing("gpt-image-2") {
+		t.Fatal("hidden model must be callable and absent from listings, even if a visible pattern overlaps")
+	}
+	source := []string{"gpt-image-2", "gpt-6.2-astra", "gpt-6.2-sol", "claude-sonnet-5"}
+	if got := cfg.FilterForListing(source); !slices.Equal(got, []string{"gpt-6.2-sol", "gpt-6.2-astra"}) {
+		t.Fatalf("unexpected public model order: %v", got)
+	}
+	cfg.DefaultModel = "gpt-image-2"
+	if _, err := normalizeGroupModelAllowlist(cfg); err == nil {
+		t.Fatal("hidden model must not be a public default")
+	}
+	cfg.Enabled = false
+	if cfg.IsHiddenFromListing("gpt-image-2") {
+		t.Fatal("saved visibility choices must be inactive when the allowlist is disabled")
+	}
+}
+
+func TestGroupModelAllowlistHiddenOnly(t *testing.T) {
+	cfg, err := normalizeGroupModelAllowlist(GroupModelAllowlist{
+		Enabled: true, HiddenModels: []string{"gpt-image-2"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Allows("gpt-image-2") || cfg.Allows("gpt-6.2-sol") {
+		t.Fatal("only the configured image model should be callable")
+	}
+	if got := cfg.FilterForListing([]string{"gpt-image-2", "gpt-6.2-sol"}); len(got) != 0 {
+		t.Fatalf("hidden-only catalog should be empty, got %v", got)
 	}
 }
 

@@ -154,8 +154,7 @@ func (s *OpenAIGatewayService) BuildGroupConfiguredCodexModelsManifest(
 	body, _, err = mergeConfiguredCodexModelsManifest(
 		body,
 		nil,
-		group.ModelAllowlist.Models,
-		group.ModelAllowlistEnabled(),
+		group.ModelAllowlist,
 	)
 	if err != nil {
 		return nil, false, fmt.Errorf("build group configured Codex models: %w", err)
@@ -199,8 +198,7 @@ func (s *OpenAIGatewayService) MergeGroupConfiguredCodexModels(
 	body, changed, err := mergeConfiguredCodexModelsManifest(
 		manifest.Body,
 		configuredModels,
-		group.ModelAllowlist.Models,
-		group.ModelAllowlistEnabled(),
+		group.ModelAllowlist,
 	)
 	if err != nil {
 		return fmt.Errorf("merge group configured Codex models: %w", err)
@@ -1407,8 +1405,7 @@ func BuildDeepSeekCodexModelsManifest(modelIDs []string) ([]byte, error) {
 func mergeConfiguredCodexModelsManifest(
 	body []byte,
 	configuredModels []string,
-	selectedModels []string,
-	filterBySelection bool,
+	allowlist GroupModelAllowlist,
 ) ([]byte, bool, error) {
 	var envelope map[string]json.RawMessage
 	if err := json.Unmarshal(body, &envelope); err != nil {
@@ -1419,15 +1416,13 @@ func mergeConfiguredCodexModelsManifest(
 		return nil, false, err
 	}
 
-	selected := make(map[string]struct{}, len(selectedModels))
-	for _, modelID := range selectedModels {
+	selected := make(map[string]struct{}, len(allowlist.Models))
+	for _, modelID := range allowlist.Models {
 		modelID = strings.TrimSpace(modelID)
 		if modelID != "" {
 			selected[modelID] = struct{}{}
 		}
 	}
-	// 白名单条目匹配统一走 GroupModelAllowlist.Allows（通配条目按前缀展开）。
-	allowlist := GroupModelAllowlist{Enabled: filterBySelection, Models: selectedModels}
 	seen := make(map[string]struct{}, len(upstreamModels)+len(configuredModels))
 	merged := make([]json.RawMessage, 0, len(upstreamModels)+len(configuredModels))
 	changed := false
@@ -1436,7 +1431,7 @@ func mergeConfiguredCodexModelsManifest(
 			Slug string `json:"slug"`
 		}
 		if err := json.Unmarshal(rawModel, &descriptor); err != nil || strings.TrimSpace(descriptor.Slug) == "" {
-			if filterBySelection {
+			if allowlist.Enabled {
 				changed = true
 				continue
 			}
@@ -1448,13 +1443,13 @@ func mergeConfiguredCodexModelsManifest(
 			changed = true
 			continue
 		}
-		if filterBySelection && !allowlist.Allows(descriptor.Slug) {
+		if !allowlist.AllowsListing(descriptor.Slug) {
 			changed = true
 			continue
 		}
 		if strings.HasPrefix(descriptor.Slug, codexAutoModelPrefix) {
 			_, explicitlyEnabled := selected[descriptor.Slug]
-			explicitlyEnabled = filterBySelection && explicitlyEnabled
+			explicitlyEnabled = allowlist.Enabled && explicitlyEnabled
 			if !explicitlyEnabled {
 				changed = true
 				continue
@@ -1474,11 +1469,11 @@ func mergeConfiguredCodexModelsManifest(
 		if isCodexDedicatedMediaModel(modelID) {
 			continue
 		}
-		if filterBySelection && !allowlist.Allows(modelID) {
+		if !allowlist.AllowsListing(modelID) {
 			continue
 		}
 		if strings.HasPrefix(modelID, codexAutoModelPrefix) {
-			if _, explicitlyEnabled := selected[modelID]; !filterBySelection || !explicitlyEnabled {
+			if _, explicitlyEnabled := selected[modelID]; !allowlist.Enabled || !explicitlyEnabled {
 				continue
 			}
 		}
@@ -1787,7 +1782,8 @@ func (s *OpenAIGatewayService) FetchCodexModelsManifest(ctx context.Context, acc
 	headers := make(http.Header)
 	if useAPIKeyUpstream {
 		headers.Set("Authorization", "Bearer "+authToken)
-		credAccount.ApplyHeaderOverrides(headers)
+		// 清单按请求头分桶缓存并跨用户共享：不携带用户身份。
+		credAccount.ApplyHeaderOverrides(withoutHeaderOverrideRequestScope(ctx), headers)
 	} else {
 		authHeaders, authErr := s.buildOpenAIAuthenticationHeaders(ctx, credAccount, authToken)
 		if authErr != nil {

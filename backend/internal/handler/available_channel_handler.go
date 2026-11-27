@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
@@ -65,7 +66,8 @@ type userAvailableGroup struct {
 	IsExclusive        bool    `json:"is_exclusive"`
 
 	// 不对外输出；List 按请求语言把 Name 换成译文后丢弃。
-	i18n service.GroupI18n
+	i18n           service.GroupI18n
+	modelAllowlist service.GroupModelAllowlist
 }
 
 // userSupportedModelPricing 用户可见的定价字段白名单。
@@ -150,8 +152,10 @@ func (h *AvailableChannelHandler) List(c *gin.Context) {
 		return
 	}
 	allowedGroupIDs := make(map[int64]struct{}, len(userGroups))
+	allowlists := make(map[int64]service.GroupModelAllowlist, len(userGroups))
 	for i := range userGroups {
 		allowedGroupIDs[userGroups[i].ID] = struct{}{}
+		allowlists[userGroups[i].ID] = userGroups[i].ModelAllowlist
 	}
 
 	channels, err := h.channelService.ListAvailable(c.Request.Context())
@@ -169,6 +173,9 @@ func (h *AvailableChannelHandler) List(c *gin.Context) {
 		visibleGroups := filterUserVisibleGroups(ch.Groups, allowedGroupIDs)
 		if len(visibleGroups) == 0 {
 			continue
+		}
+		for i := range visibleGroups {
+			visibleGroups[i].modelAllowlist = allowlists[visibleGroups[i].ID]
 		}
 		localizeUserAvailableGroups(visibleGroups, acceptLanguage)
 		sections := buildPlatformSections(ch, visibleGroups)
@@ -247,10 +254,20 @@ func buildPlatformSections(
 	sections := make([]userChannelPlatformSection, 0, len(platforms))
 	for _, platform := range platforms {
 		platformSet := map[string]struct{}{platform: {}}
+		groups := groupsByPlatform[platform]
+		models := toUserSupportedModels(ch.SupportedModels, platformSet)
+		models = slices.DeleteFunc(models, func(model userSupportedModel) bool {
+			for _, group := range groups {
+				if !group.modelAllowlist.IsHiddenFromListing(model.Name) {
+					return false
+				}
+			}
+			return true
+		})
 		sections = append(sections, userChannelPlatformSection{
 			Platform:        platform,
-			Groups:          groupsByPlatform[platform],
-			SupportedModels: toUserSupportedModels(ch.SupportedModels, platformSet),
+			Groups:          groups,
+			SupportedModels: models,
 		})
 	}
 	return presentChannelSections(sections)

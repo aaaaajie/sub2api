@@ -881,7 +881,22 @@
                   >
                     {{ t("admin.groups.modelAllowlist.wildcardTag") }}
                   </span>
+                  <span v-if="item.selected && item.hidden" class="ml-1 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t("admin.groups.modelAllowlist.hiddenModel") }}
+                  </span>
                 </span>
+                <button
+                  type="button"
+                  :disabled="!item.selected"
+                  :aria-pressed="!!item.hidden"
+                  :aria-label="t('admin.groups.modelAllowlist.hideModel', { model: item.id })"
+                  :title="t(item.hidden ? 'admin.groups.modelAllowlist.hiddenModel' : 'admin.groups.modelAllowlist.visibleModel')"
+                  :class="item.hidden ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400'"
+                  class="rounded p-1 hover:bg-gray-100 focus-visible:outline-primary-500 disabled:opacity-40 dark:hover:bg-dark-600"
+                  @click="createDefaultModel = toggleModelAllowlistVisibility(item, createDefaultModel)"
+                >
+                  <Icon :name="item.hidden ? 'eyeOff' : 'eye'" size="sm" />
+                </button>
                 <button
                   type="button"
                   :disabled="index === 0"
@@ -2581,7 +2596,22 @@
                   >
                     {{ t("admin.groups.modelAllowlist.wildcardTag") }}
                   </span>
+                  <span v-if="item.selected && item.hidden" class="ml-1 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t("admin.groups.modelAllowlist.hiddenModel") }}
+                  </span>
                 </span>
+                <button
+                  type="button"
+                  :disabled="!item.selected"
+                  :aria-pressed="!!item.hidden"
+                  :aria-label="t('admin.groups.modelAllowlist.hideModel', { model: item.id })"
+                  :title="t(item.hidden ? 'admin.groups.modelAllowlist.hiddenModel' : 'admin.groups.modelAllowlist.visibleModel')"
+                  :class="item.hidden ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400'"
+                  class="rounded p-1 hover:bg-gray-100 focus-visible:outline-primary-500 disabled:opacity-40 dark:hover:bg-dark-600"
+                  @click="editDefaultModel = toggleModelAllowlistVisibility(item, editDefaultModel)"
+                >
+                  <Icon :name="item.hidden ? 'eyeOff' : 'eye'" size="sm" />
+                </button>
                 <button
                   type="button"
                   :disabled="index === 0"
@@ -4469,6 +4499,7 @@ import {
   moveModelAllowlistItem,
   selectAllModelAllowlistItems,
   setModelAllowlistCandidates,
+  type ModelAllowlistItem,
 } from "./groupModelAllowlist";
 import { createModelAllowlistCandidatesTracker } from "./modelAllowlistCandidates";
 import { normalizeSupportedModelScopesForPlatform } from "./groupsSupportedModelScopes";
@@ -5047,15 +5078,23 @@ const createModelAllowlistSelectedCount = computed(
 const editModelAllowlistSelectedCount = computed(
   () => editModelAllowlistState.items.filter((item) => item.selected).length,
 );
+const toggleModelAllowlistVisibility = (item: ModelAllowlistItem, defaultModel: string) => {
+  item.hidden = !item.hidden;
+  return item.hidden && item.id.toLowerCase() === defaultModel.toLowerCase() ? "" : defaultModel;
+};
 const defaultModelOptions = (
   state: typeof createModelAllowlistState,
   selectedModel: string,
 ) => {
   const modelIDs = state.items
+    .filter((item) => !state.enabled || !item.hidden)
     .map((item) => item.id)
     .filter((id) => id.trim() && !id.includes("*"));
   const selected = selectedModel.trim();
-  if (selected && !modelIDs.some((id) => id.toLowerCase() === selected.toLowerCase())) {
+  const isHidden = state.enabled && state.items.some(
+    (item) => item.hidden && item.id.toLowerCase() === selected.toLowerCase(),
+  );
+  if (selected && !isHidden && !modelIDs.some((id) => id.toLowerCase() === selected.toLowerCase())) {
     modelIDs.unshift(selected);
   }
   return [
@@ -5381,6 +5420,7 @@ const resetModelAllowlistState = (
   const fresh = createInitialModelAllowlistState(config);
   state.enabled = fresh.enabled;
   state.savedModels = fresh.savedModels;
+  state.savedHiddenModels = fresh.savedHiddenModels;
   state.items = fresh.items;
 };
 

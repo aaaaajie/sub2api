@@ -154,7 +154,7 @@ func filterBatchImageModelsByAllowlist(models []service.BatchImagePublicModel, a
 	}
 	filtered := make([]service.BatchImagePublicModel, 0, len(models))
 	for _, model := range models {
-		if allowlist.Allows(model.ID) {
+		if allowlist.AllowsListing(model.ID) {
 			filtered = append(filtered, model)
 		}
 	}

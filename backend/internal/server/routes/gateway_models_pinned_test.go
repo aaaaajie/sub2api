@@ -97,6 +97,17 @@ func TestGatewayRoutesPinnedModelsDispatchesOrdinaryAndCodexRequests(t *testing.
 		require.Contains(t, w.Body.String(), `"slug":"gpt-5.5"`)
 		require.NotContains(t, w.Body.String(), `"data"`)
 	}
+
+	group.ModelAllowlist = service.GroupModelAllowlist{
+		Enabled:      true,
+		Models:       []string{"gpt-5.5", "ordinary-*"},
+		HiddenModels: []string{"ordinary-upstream-model"},
+	}
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/v1/models", nil))
+	require.Equal(t, http.StatusOK, w.Code)
+	require.JSONEq(t, `{"object":"list","data":[]}`, w.Body.String())
+
 	require.EqualValues(t, 1, upstream.ordinaryCalls.Load())
 	require.EqualValues(t, 1, upstream.codexCalls.Load())
 }
