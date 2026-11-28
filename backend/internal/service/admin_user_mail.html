@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="{{.Language}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>{{.Subject}}</title>
+</head>
+<body style="margin:0;padding:0;background:#eef0f2;color:#17191c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;-webkit-text-size-adjust:100%">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#eef0f2">
+    <tr><td align="center" style="padding:28px 14px">
+      <!--[if mso]><table role="presentation" width="600"><tr><td><![endif]-->
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:#fff;border:1px solid #d9dde2;border-radius:14px;border-collapse:separate;overflow:hidden">
+        <tr><td style="padding:24px 28px;background:#15171a;color:#fff;border-radius:13px 13px 0 0">
+          <span style="font-size:21px;font-weight:750;letter-spacing:-.045em;line-height:1.2">{{.SiteName}}</span>
+        </td></tr>
+        <tr><td style="padding:29px 28px 27px;border-bottom:1px solid #e3e6e9;background:#f9fafb">
+          <p style="margin:0 0 10px;color:#555e69;font-size:12px;font-weight:650;letter-spacing:.06em">{{.Label}}</p>
+          <h1 style="margin:0;color:#15171a;font-size:28px;font-weight:720;line-height:1.34;letter-spacing:-.025em;overflow-wrap:anywhere">{{.Subject}}</h1>
+        </td></tr>
+        <tr><td style="padding:24px 28px 27px;color:#292e35;font-size:15px;line-height:1.8;overflow-wrap:anywhere">
+          {{range .Paragraphs}}<p style="margin:0 0 13px">{{range $i, $line := .}}{{if $i}}<br>{{end}}{{$line}}{{end}}</p>{{end}}
+          {{if .ActionURL}}
+          <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:19px"><tr><td bgcolor="#17191c" style="border-radius:8px;mso-padding-alt:10px 17px">
+            <a href="{{.ActionURL}}" style="display:inline-block;padding:10px 17px;color:#fff;font-size:14px;font-weight:650;text-decoration:none;line-height:1.5">{{.ActionLabel}}</a>
+          </td></tr></table>
+          {{end}}
+        </td></tr>
+        <tr><td style="padding:15px 28px;border-top:1px solid #e3e6e9;color:#616a76;font-size:12px;line-height:1.6">{{.Footer}}</td></tr>
+      </table>
+      <!--[if mso]></td></tr></table><![endif]-->
+    </td></tr>
+  </table>
+</body>
+</html>

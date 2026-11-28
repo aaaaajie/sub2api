@@ -56,6 +56,18 @@ export interface BatchUpdateUserLimitsResponse {
   affected: number
 }
 
+export interface UserListFilters {
+  status?: 'active' | 'disabled'
+  role?: 'admin' | 'user'
+  search?: string
+  group_name?: string
+  api_key_group_id?: number
+  attributes?: Record<number, string>
+  include_subscriptions?: boolean
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
+}
+
 /**
  * List all users with pagination
  * @param page - Page number (default: 1)
@@ -67,17 +79,7 @@ export interface BatchUpdateUserLimitsResponse {
 export async function list(
   page: number = 1,
   pageSize: number = 20,
-  filters?: {
-    status?: 'active' | 'disabled'
-    role?: 'admin' | 'user'
-    search?: string
-    group_name?: string         // fuzzy filter by allowed group name
-    api_key_group_id?: number   // filter users by the group their API keys are bound to
-    attributes?: Record<number, string>  // attributeId -> value
-    include_subscriptions?: boolean
-    sort_by?: string
-    sort_order?: 'asc' | 'desc'
-  },
+  filters?: UserListFilters,
   options?: {
     signal?: AbortSignal
   }

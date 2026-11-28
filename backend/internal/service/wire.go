@@ -936,6 +936,7 @@ var ProviderSet = wire.NewSet(
 	ProvideOpsCleanupService,
 	ProvideOpsScheduledReportService,
 	NewEmailService,
+	ProvideAdminUserMailService,
 	NewNotificationEmailService,
 	ProvideEmailQueueService,
 	NewTurnstileService,

@@ -263,6 +263,14 @@
               {{ t('admin.users.bulkDelete.action', { count: selectedCount }) }}
             </button>
 
+            <button type="button" class="btn btn-secondary flex-1 md:flex-initial" @click="openMail()">
+              <Icon name="mail" size="md" class="mr-2" />
+              {{ t('admin.userMail.action') }}
+            </button>
+            <button type="button" class="btn btn-secondary px-2.5" :title="t('admin.userMail.history')" :aria-label="t('admin.userMail.history')" @click="openMail(undefined, true)">
+              <Icon name="clock" size="md" />
+            </button>
+
             <!-- Create User Button (full width on mobile, auto width on desktop) -->
             <button @click="showCreateModal = true" class="btn btn-primary flex-1 md:flex-initial">
               <Icon name="plus" size="md" class="mr-2" />
@@ -683,6 +691,14 @@
         <div class="py-1">
           <template v-for="user in users" :key="user.id">
             <template v-if="user.id === activeMenuId">
+              <button
+                type="button"
+                class="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
+                @click="openMail(user); closeActionMenu()"
+              >
+                <Icon name="mail" size="sm" class="text-gray-400" />
+                {{ t('admin.userMail.action') }}
+              </button>
               <!-- View API Keys -->
               <button
                 @click="handleViewApiKeys(user); closeActionMenu()"
@@ -769,6 +785,7 @@
       @cancel="bulkDeleteIds = []"
     />
     <UserCreateModal :show="showCreateModal" @close="showCreateModal = false" @success="loadUsers" />
+    <UserMailDialog v-if="mailDialog" :audience="mailDialog.audience" :audience-label="mailDialog.label" :start-in-history="mailDialog.history" @close="mailDialog = null" />
     <UserEditModal :show="showEditModal" :user="editingUser" @close="closeEditModal" @success="loadUsers" />
     <BulkEditUserModal
       :show="showBulkEditModal"
@@ -804,7 +821,8 @@ const { t } = useI18n()
 import { adminAPI } from '@/api/admin'
 import type { AdminUser, AdminGroup, UserAttributeDefinition } from '@/types'
 import type { BatchUserUsageStats } from '@/api/admin/dashboard'
-import type { PlatformQuotaItem } from '@/api/admin/users'
+import type { PlatformQuotaItem, UserListFilters } from '@/api/admin/users'
+import type { UserMailAudience } from '@/api/admin/userMail'
 import type { Column } from '@/components/common/types'
 import type { SelectOption } from '@/components/common/Select.vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -823,6 +841,7 @@ import PlatformCostCell from '@/components/user/PlatformCostCell.vue'
 import UserPlatformQuotaCell from '@/components/user/UserPlatformQuotaCell.vue'
 import UserCreateModal from '@/components/admin/user/UserCreateModal.vue'
 import UserEditModal from '@/components/admin/user/UserEditModal.vue'
+import UserMailDialog from '@/components/admin/user/UserMailDialog.vue'
 import BulkEditUserModal from '@/components/admin/user/BulkEditUserModal.vue'
 import UserPlatformQuotaModal from '@/components/admin/user/UserPlatformQuotaModal.vue'
 import UserApiKeysModal from '@/components/admin/user/UserApiKeysModal.vue'
@@ -1465,7 +1484,7 @@ const openActionMenu = (user: AdminUser, e: MouseEvent) => {
 
     const rect = target.getBoundingClientRect()
     const menuWidth = 200
-    const menuHeight = 240
+    const menuHeight = 275
     const padding = 8
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
@@ -1582,6 +1601,34 @@ const handleAttributesModalClose = async () => {
   loadUsers()
 }
 
+function currentUserFilters(): UserListFilters {
+  const attributes: Record<number, string> = {}
+  for (const [id, value] of Object.entries(activeAttributeFilters)) {
+    if (value) attributes[Number(id)] = value
+  }
+  return {
+    role: (filters.role || undefined) as UserListFilters['role'],
+    status: (filters.status || undefined) as UserListFilters['status'],
+    search: Array.from(searchQuery.value.trim()).slice(0, 100).join('') || undefined,
+    group_name: filters.group || undefined,
+    api_key_group_id: filters.apiKeyGroup ?? undefined,
+    attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
+  }
+}
+
+const mailDialog = ref<{ audience: UserMailAudience; label: string; history: boolean } | null>(null)
+
+function openMail(user?: AdminUser, history = false) {
+  const ids = user ? [user.id] : [...selectedIds.value]
+  mailDialog.value = {
+    audience: ids.length > 0 ? { user_ids: ids } : { filters: currentUserFilters() },
+    label: user ? user.email : ids.length > 0
+      ? t('admin.userMail.selectedAudience', { count: ids.length })
+      : t('admin.userMail.filteredAudience'),
+    history,
+  }
+}
+
 const loadUsers = async () => {
   abortController?.abort()
   const currentAbortController = new AbortController()
@@ -1589,24 +1636,11 @@ const loadUsers = async () => {
   const { signal } = currentAbortController
   loading.value = true
   try {
-    // Build attribute filters from active filters
-    const attrFilters: Record<number, string> = {}
-    for (const [attrId, value] of Object.entries(activeAttributeFilters)) {
-      if (value) {
-        attrFilters[Number(attrId)] = value
-      }
-    }
-
     const response = await adminAPI.users.list(
       pagination.page,
       pagination.page_size,
       {
-        role: filters.role as any,
-        status: filters.status as any,
-        search: searchQuery.value || undefined,
-        group_name: filters.group || undefined,
-        api_key_group_id: filters.apiKeyGroup ?? undefined,
-        attributes: Object.keys(attrFilters).length > 0 ? attrFilters : undefined,
+        ...currentUserFilters(),
         // 始终请求 subscriptions：列隐藏时仍需用于 UserPlatformQuotaModal 的 active-subscription 警示 banner
         include_subscriptions: true,
         sort_by: sortState.sort_by,
