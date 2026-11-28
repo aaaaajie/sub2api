@@ -1,0 +1,60 @@
+export default {
+  userMail: {
+    title: '用户邮件',
+    action: '发邮件',
+    compose: '写邮件',
+    history: '发送记录',
+    to: '收件人',
+    selectedAudience: '已勾选的 {count} 位用户',
+    filteredAudience: '当前筛选结果中的全部用户',
+    template: '邮件模板',
+    templates: { maintenance: '维护通知', service: '服务变更', account: '账户消息' },
+    subject: '主题',
+    subjectPlaceholder: '输入收件箱里显示的标题',
+    body: '正文',
+    bodyPlaceholder: '写下要告知用户的内容，空行可分段。',
+    linkOptional: '添加邮件按钮（选填）',
+    linkText: '按钮文字',
+    linkURL: 'HTTPS 链接',
+    preview: '邮件预览',
+    previewHint: '填写主题和正文后，预览邮件并核对收件人数。',
+    previewAction: '预览并核对收件人',
+    recipientCount: '{count} 位收件人',
+    skippedCount: '已排除 {count} 位',
+    sendTest: '试发给自己',
+    sendTo: '发送给 {count} 人',
+    testTag: '试发',
+    loading: '加载中…',
+    previous: '上一页',
+    next: '下一页',
+    emptyHistory: '暂无发送记录。',
+    chooseJob: '选择一条记录查看逐人发送结果。',
+    progress: '邮件发送进度',
+    retry: '重试',
+    error: '操作未完成，请稍后重试。',
+    status: {
+      pending: '待处理',
+      sending: '发送中',
+      accepted: 'SMTP 已接收',
+      failed: '失败',
+      skipped: '已跳过',
+      uncertain: '待核实'
+    },
+    reasons: {
+      recipient_lookup: '暂时无法核对收件地址。',
+      recipient_changed: '用户已删除或邮箱已变更。',
+      smtp_rejected: '发件服务器拒收。',
+      smtp_connection: 'SMTP 连接、配置或认证异常。',
+      smtp_confirmation: '邮件已提交，发件服务器的确认结果缺失。',
+      interrupted: '发送中断，发件服务器的接收状态未知。'
+    },
+    errors: {
+      INVALID_USER_MAIL_DRAFT: '请填写主题和正文。如添加邮件按钮，请同时填写按钮文字和 HTTPS 链接。',
+      USER_MAIL_AUDIENCE_LIMIT: '每批最多 500 位用户，请缩小筛选范围或分批发送。',
+      USER_MAIL_EMPTY_AUDIENCE: '收件范围里没有有效的邮箱。',
+      USER_MAIL_AUDIENCE_CHANGED: '收件范围发生变化，请重新预览后发送。',
+      USER_MAIL_SMTP_SENDER_REQUIRED: '请先在系统设置配置 SMTP 发件地址。',
+      EMAIL_NOT_CONFIGURED: '请先在系统设置配置 SMTP。'
+    }
+  }
+}

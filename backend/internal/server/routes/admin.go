@@ -41,6 +41,7 @@ func RegisterAdminRoutes(
 
 		// 用户管理
 		registerUserManagementRoutes(admin, h)
+		registerUserMailRoutes(admin, h)
 
 		// 分组管理
 		registerGroupRoutes(admin, h)
@@ -297,6 +298,15 @@ func registerDashboardRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		dashboard.GET("/user-breakdown", h.Admin.Dashboard.GetUserBreakdown)
 		dashboard.POST("/aggregation/backfill", h.Admin.Dashboard.BackfillAggregation)
 	}
+}
+
+func registerUserMailRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	mail := admin.Group("/user-mail", h.Admin.UserMail.RequireFullAccess)
+	mail.GET("", h.Admin.UserMail.List)
+	mail.POST("", h.Admin.UserMail.Queue)
+	mail.POST("/preview", h.Admin.UserMail.Preview)
+	mail.GET("/:id", h.Admin.UserMail.Get)
+	mail.POST("/:id/recipients/:user_id/retry", h.Admin.UserMail.Retry)
 }
 
 func registerUserManagementRoutes(admin *gin.RouterGroup, h *handler.Handlers) {

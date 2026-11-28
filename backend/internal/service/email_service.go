@@ -15,6 +15,7 @@ import (
 	"math/big"
 	"net"
 	"net/smtp"
+	"net/textproto"
 	"net/url"
 	"strconv"
 	"strings"
@@ -24,6 +25,7 @@ import (
 )
 
 var (
+	errSMTPAcceptanceUnknown = errors.New("SMTP acceptance could not be confirmed")
 	ErrEmailNotConfigured    = infraerrors.ServiceUnavailable("EMAIL_NOT_CONFIGURED", "email service not configured")
 	ErrInvalidVerifyCode     = infraerrors.BadRequest("INVALID_VERIFY_CODE", "invalid or expired verification code")
 	ErrVerifyCodeTooFrequent = infraerrors.TooManyRequests("VERIFY_CODE_TOO_FREQUENT", "please wait before requesting a new code")
@@ -226,6 +228,10 @@ func (s *EmailService) SendEmailWithConfig(config *SMTPConfig, to, subject, body
 		return fmt.Errorf("write msg: %w", err)
 	}
 	if err = w.Close(); err != nil {
+		var reply *textproto.Error
+		if !errors.As(err, &reply) {
+			return fmt.Errorf("close writer: %w: %w", errSMTPAcceptanceUnknown, err)
+		}
 		return fmt.Errorf("close writer: %w", err)
 	}
 	// Email is sent successfully after w.Close(), ignore Quit errors

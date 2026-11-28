@@ -1,0 +1,60 @@
+export default {
+  userMail: {
+    title: 'User email',
+    action: 'Send email',
+    compose: 'Compose',
+    history: 'Send history',
+    to: 'To',
+    selectedAudience: '{count} selected users',
+    filteredAudience: 'All users matching the current filters',
+    template: 'Email template',
+    templates: { maintenance: 'Maintenance', service: 'Service update', account: 'Account message' },
+    subject: 'Subject',
+    subjectPlaceholder: 'Enter the title shown in the inbox',
+    body: 'Message',
+    bodyPlaceholder: 'Write your message. Use blank lines to separate paragraphs.',
+    linkOptional: 'Add an email button (optional)',
+    linkText: 'Button label',
+    linkURL: 'HTTPS link',
+    preview: 'Email preview',
+    previewHint: 'Enter a subject and message to preview the email and confirm the recipient count.',
+    previewAction: 'Preview and check recipients',
+    recipientCount: '{count} recipients',
+    skippedCount: '{count} excluded',
+    sendTest: 'Send a test to myself',
+    sendTo: 'Send to {count}',
+    testTag: 'Test',
+    loading: 'Loading…',
+    previous: 'Previous',
+    next: 'Next',
+    emptyHistory: 'No emails sent yet.',
+    chooseJob: 'Select a job to see results for each recipient.',
+    progress: 'Email delivery progress',
+    retry: 'Retry',
+    error: 'The request could not be completed. Try again shortly.',
+    status: {
+      pending: 'Pending',
+      sending: 'Sending',
+      accepted: 'Accepted by SMTP',
+      failed: 'Failed',
+      skipped: 'Skipped',
+      uncertain: 'Unconfirmed'
+    },
+    reasons: {
+      recipient_lookup: 'The recipient address could not be checked.',
+      recipient_changed: 'The user was deleted or their email changed.',
+      smtp_rejected: 'The sending server rejected the message.',
+      smtp_connection: 'The SMTP connection, configuration, or authentication failed.',
+      smtp_confirmation: 'The confirmation from the sending server was lost after submission.',
+      interrupted: 'Sending was interrupted and SMTP acceptance is unknown.'
+    },
+    errors: {
+      INVALID_USER_MAIL_DRAFT: 'Enter a subject and message. If adding a button, provide a label and an HTTPS link.',
+      USER_MAIL_AUDIENCE_LIMIT: 'A batch can contain up to 500 users. Narrow the filters or use multiple batches.',
+      USER_MAIL_EMPTY_AUDIENCE: 'There are no valid email addresses in this audience.',
+      USER_MAIL_AUDIENCE_CHANGED: 'The recipients changed. Preview the message again before sending.',
+      USER_MAIL_SMTP_SENDER_REQUIRED: 'Configure an SMTP sender address in the system settings first.',
+      EMAIL_NOT_CONFIGURED: 'Configure SMTP in the system settings first.'
+    }
+  }
+}
