@@ -785,7 +785,14 @@
       @cancel="bulkDeleteIds = []"
     />
     <UserCreateModal :show="showCreateModal" @close="showCreateModal = false" @success="loadUsers" />
-    <UserMailDialog v-if="mailDialog" :audience="mailDialog.audience" :audience-label="mailDialog.label" :start-in-history="mailDialog.history" @close="mailDialog = null" />
+    <UserMailDialog
+      v-if="mailDialog"
+      :selected-user-ids="mailDialog.userIds"
+      :filters="mailDialog.filters"
+      :single-email="mailDialog.email"
+      :start-in-history="mailDialog.history"
+      @close="mailDialog = null"
+    />
     <UserEditModal :show="showEditModal" :user="editingUser" @close="closeEditModal" @success="loadUsers" />
     <BulkEditUserModal
       :show="showBulkEditModal"
@@ -822,7 +829,6 @@ import { adminAPI } from '@/api/admin'
 import type { AdminUser, AdminGroup, UserAttributeDefinition } from '@/types'
 import type { BatchUserUsageStats } from '@/api/admin/dashboard'
 import type { PlatformQuotaItem, UserListFilters } from '@/api/admin/users'
-import type { UserMailAudience } from '@/api/admin/userMail'
 import type { Column } from '@/components/common/types'
 import type { SelectOption } from '@/components/common/Select.vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
@@ -1616,15 +1622,13 @@ function currentUserFilters(): UserListFilters {
   }
 }
 
-const mailDialog = ref<{ audience: UserMailAudience; label: string; history: boolean } | null>(null)
+const mailDialog = ref<{ userIds: number[]; filters: UserListFilters; email?: string; history: boolean } | null>(null)
 
 function openMail(user?: AdminUser, history = false) {
-  const ids = user ? [user.id] : [...selectedIds.value]
   mailDialog.value = {
-    audience: ids.length > 0 ? { user_ids: ids } : { filters: currentUserFilters() },
-    label: user ? user.email : ids.length > 0
-      ? t('admin.userMail.selectedAudience', { count: ids.length })
-      : t('admin.userMail.filteredAudience'),
+    userIds: user ? [user.id] : [...selectedIds.value],
+    filters: currentUserFilters(),
+    email: user?.email,
     history,
   }
 }

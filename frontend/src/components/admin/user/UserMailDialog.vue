@@ -27,11 +27,20 @@
 
     <div v-if="mode === 'compose'" class="grid gap-5 lg:grid-cols-2">
       <fieldset :disabled="!!busy" class="min-w-0 space-y-4">
-        <div class="flex min-w-0 items-center gap-2.5 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-dark-600">
+        <div v-if="singleEmail !== undefined" class="flex min-w-0 items-center gap-2.5 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-dark-600">
           <Icon name="users" size="sm" class="shrink-0 text-gray-500" />
           <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.userMail.to') }}</span>
-          <span class="min-w-0 truncate text-sm font-medium text-gray-900 dark:text-white" :title="audienceLabel">{{ audienceLabel }}</span>
+          <span class="min-w-0 truncate text-sm font-medium text-gray-900 dark:text-white" :title="singleEmail">{{ singleEmail }}</span>
         </div>
+        <label v-else class="block">
+          <span class="input-label">{{ t('admin.userMail.audienceScope') }}</span>
+          <select v-model="audienceScope" class="input">
+            <option v-if="selectedUserIds.length" value="selected">{{ t('admin.userMail.selectedAudience', { count: selectedUserIds.length }) }}</option>
+            <option v-if="hasFilters" value="filtered">{{ t('admin.userMail.filteredAudience') }}</option>
+            <option value="all">{{ t('admin.userMail.siteWideAudience') }}</option>
+          </select>
+          <span v-if="audienceScope === 'all'" class="input-hint block">{{ t('admin.userMail.siteWideHint') }}</span>
+        </label>
 
         <div>
           <p class="input-label">{{ t('admin.userMail.template') }}</p>
@@ -173,10 +182,18 @@ import Icon from '@/components/icons/Icon.vue'
 import { formatDateTime } from '@/utils/format'
 import { getUserMail, listUserMail, previewUserMail, queueUserMail, retryUserMailRecipient } from '@/api/admin/userMail'
 import type { UserMailAudience, UserMailDraft, UserMailJob, UserMailJobDetail, UserMailPreview, UserMailStatus } from '@/api/admin/userMail'
+import type { UserListFilters } from '@/api/admin/users'
 
-const props = defineProps<{ audience: UserMailAudience; audienceLabel: string; startInHistory?: boolean }>()
+const props = defineProps<{ selectedUserIds: number[]; filters: UserListFilters; singleEmail?: string; startInHistory?: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 const { t, locale } = useI18n()
+const hasFilters = computed(() => Object.values(props.filters).some(Boolean))
+const audienceScope = ref<'selected' | 'filtered' | 'all'>(props.selectedUserIds.length ? 'selected' : hasFilters.value ? 'filtered' : 'all')
+const audience = computed<UserMailAudience>(() => {
+  if (audienceScope.value === 'selected') return { user_ids: props.selectedUserIds }
+  if (audienceScope.value === 'filtered') return { filters: props.filters }
+  return { filters: {} }
+})
 const tabs = ['compose', 'history'] as const
 const templates = [{ id: 'maintenance', icon: 'clock' }, { id: 'service', icon: 'sparkles' }, { id: 'account', icon: 'user' }] as const
 const summaryKeys = ['pending', 'accepted', 'failed', 'skipped', 'uncertain'] as const
@@ -200,12 +217,18 @@ let pollTimer: ReturnType<typeof setTimeout> | undefined
 let detailVersion = 0
 
 watch(draft, () => {
-  preview.value = undefined
-  jobID.value = ''
+  invalidatePreview()
   testID.value = ''
   testQueued.value = false
-  error.value = ''
 })
+
+watch(audienceScope, invalidatePreview, { flush: 'sync' })
+
+function invalidatePreview() {
+  preview.value = undefined
+  jobID.value = ''
+  error.value = ''
+}
 
 function message(cause: unknown) {
   const reason = (cause as { reason?: string } | undefined)?.reason
@@ -248,7 +271,7 @@ async function renderPreview() {
   busy.value = 'preview'
   error.value = ''
   try {
-    preview.value = await previewUserMail({ ...draft }, props.audience)
+    preview.value = await previewUserMail({ ...draft }, audience.value)
   } catch (cause) {
     error.value = message(cause)
   } finally {
